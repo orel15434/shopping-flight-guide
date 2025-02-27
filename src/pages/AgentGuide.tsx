@@ -166,7 +166,7 @@ const agentsData: Record<string, AgentDetails> = {
   "basetao": {
     id: "basetao",
     name: "Basetao",
-    logo: "https://login.basetao.com/img/logo.jpg",
+    logo: "https://www.basetao.com/style/index/img/logo.svg",
     description: "Basetao הוא סוכן ותיק ומכובד עם מוניטין מעולה בקהילה. הוא מציע שירות אמין, תמונות איכותיות ומבחר רחב של אפשרויות משלוח ותשלום.",
     website: "https://www.basetao.com",
     registrationSteps: [

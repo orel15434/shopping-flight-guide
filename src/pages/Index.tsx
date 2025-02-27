@@ -47,7 +47,7 @@ const agents: AgentInfo[] = [
   {
     id: "basetao",
     name: "Basetao",
-    logo: "https://login.basetao.com/img/logo.jpg",
+    logo: "https://www.basetao.com/style/index/img/logo.svg",
     description: "סוכן ותיק עם מוניטין מעולה, שירות צילום מקצועי ותמיכה בעברית.",
     features: [
       "ממשק רב-לשוני", 
