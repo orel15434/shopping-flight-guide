@@ -5,7 +5,7 @@ import HeroSection from '../components/HeroSection';
 import AgentCard, { AgentInfo } from '../components/AgentCard';
 import ShippingCosts from '../components/ShippingCosts';
 import Footer from '../components/Footer';
-import { CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 
 const agents: AgentInfo[] = [
   {
