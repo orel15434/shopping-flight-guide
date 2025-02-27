@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ShippingCosts from '../components/ShippingCosts';
-import { Package2, AlertCircle, CheckCircle, Clock, CreditCard, TruckDelivery, Scale, FileText } from 'lucide-react';
+import { Package2, AlertCircle, CheckCircle, Clock, CreditCard, Truck, Scale, FileText, Info } from 'lucide-react';
 
 interface ShippingMethodInfo {
   id: string;
@@ -177,7 +177,7 @@ const Shipping = () => {
                   
                   <div className="flex justify-between mb-4">
                     <div className="flex items-center text-sm">
-                      <TruckDelivery size={14} className="ml-1 text-primary" />
+                      <Truck size={14} className="ml-1 text-primary" />
                       <span>אמינות</span>
                     </div>
                     {renderRating(method.reliability)}

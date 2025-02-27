@@ -11,7 +11,7 @@ const agents: AgentInfo[] = [
   {
     id: "cssbuy",
     name: "CSSBUY",
-    logo: "https://www.cssbuy.com/data/images/logo.png",
+    logo: "https://play-lh.googleusercontent.com/uAl9_SpJwURdKGEoRgHSEQ-CAbegLmPx6dNzWBbqZJMkoGsa9Ta4i5M495NycimTKsw",
     description: "פלטפורמה פופולרית עם ממשק משתמש נוח, מחירים תחרותיים ומגוון אפשרויות משלוח.",
     features: [
       "הרשמה פשוטה וידידותית למשתמש", 
@@ -23,7 +23,7 @@ const agents: AgentInfo[] = [
   {
     id: "ponybuy",
     name: "PONYBUY",
-    logo: "https://img.ponbuy.com/pub/media/wysiwyg/PC-LOGO-EN-TRANSPARENT.png",
+    logo: "https://yt3.googleusercontent.com/BoE-3gGWN5GEuco_XRBrkhBtVBOvkNRuKSmKOYscQ9JbdeqfCfYFeJ0xz2JgJEPhvo4WUgcDp2I=s900-c-k-c0x00ffffff-no-rj",
     description: "סוכן חדש יחסית עם שירות לקוחות מצוין, עמלות נמוכות ומחירי משלוח אטרקטיביים.",
     features: [
       "הרשמה מהירה", 
@@ -35,7 +35,7 @@ const agents: AgentInfo[] = [
   {
     id: "kakobuy",
     name: "KAKOBUY",
-    logo: "https://www.kakobuy.com/app/img/logo-ico.png",
+    logo: "https://ugc.production.linktr.ee/8750f613-326d-45a7-9736-572bb9c00240_1732602858057.jpeg",
     description: "סוכן מוכר עם ניסיון רב, מציע איכות צילום גבוהה וממשק מתקדם.",
     features: [
       "תהליך הרשמה מאובטח", 

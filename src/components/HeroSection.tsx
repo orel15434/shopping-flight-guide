@@ -16,7 +16,7 @@ const HeroSection = () => {
         <div
           className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background"
           style={{
-            backgroundImage: `url('/assets/shipping-plane-bg.jpg')`,
+            backgroundImage: `url('https://images.unsplash.com/photo-1583475020839-101b10f1c3d7?q=80&w=2070&auto=format&fit=crop')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}

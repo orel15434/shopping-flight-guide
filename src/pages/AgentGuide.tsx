@@ -5,7 +5,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import GuideSection from '../components/GuideSection';
 import ShippingCosts from '../components/ShippingCosts';
-import { User, ShoppingBag, Truck, ArrowLeft, ExternalLink, Info, AlertCircle, CheckCircle } from 'lucide-react';
+import { User, ShoppingBag, Truck, ArrowLeft, ArrowRight, ExternalLink, Info, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface AgentDetails {
   id: string;
@@ -25,7 +25,7 @@ const agentsData: Record<string, AgentDetails> = {
   "cssbuy": {
     id: "cssbuy",
     name: "CSSBUY",
-    logo: "https://www.cssbuy.com/data/images/logo.png",
+    logo: "https://play-lh.googleusercontent.com/uAl9_SpJwURdKGEoRgHSEQ-CAbegLmPx6dNzWBbqZJMkoGsa9Ta4i5M495NycimTKsw",
     description: "CSSBUY הוא אחד הסוכנים הוותיקים והמוכרים בתחום, המציע מגוון רחב של שירותים במחירים תחרותיים. הממשק נוח לשימוש וקיימת תמיכה באנגלית.",
     website: "https://www.cssbuy.com",
     registrationSteps: [
@@ -72,7 +72,7 @@ const agentsData: Record<string, AgentDetails> = {
   "ponybuy": {
     id: "ponybuy",
     name: "PONYBUY",
-    logo: "https://img.ponbuy.com/pub/media/wysiwyg/PC-LOGO-EN-TRANSPARENT.png",
+    logo: "https://yt3.googleusercontent.com/BoE-3gGWN5GEuco_XRBrkhBtVBOvkNRuKSmKOYscQ9JbdeqfCfYFeJ0xz2JgJEPhvo4WUgcDp2I=s900-c-k-c0x00ffffff-no-rj",
     description: "PONYBUY הוא סוכן חדש יחסית עם שירות לקוחות מצוין, עמלות נמוכות ומחירי משלוח אטרקטיביים. הפלטפורמה מציעה ממשק נוח ואפשרויות תשלום מגוונות.",
     website: "https://www.ponbuy.com",
     registrationSteps: [
@@ -119,7 +119,7 @@ const agentsData: Record<string, AgentDetails> = {
   "kakobuy": {
     id: "kakobuy",
     name: "KAKOBUY",
-    logo: "https://www.kakobuy.com/app/img/logo-ico.png",
+    logo: "https://ugc.production.linktr.ee/8750f613-326d-45a7-9736-572bb9c00240_1732602858057.jpeg",
     description: "KAKOBUY הוא סוכן יחסית חדש אך מבטיח, המציע שירות לקוחות מצוין, צילומי מוצר באיכות גבוהה ומחירים תחרותיים. הממשק פשוט ונוח לשימוש.",
     website: "https://www.kakobuy.com",
     registrationSteps: [
