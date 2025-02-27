@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Package2, Search } from 'lucide-react';
+import { Package2, Search, ArrowRight, RefreshCw, Calculator } from 'lucide-react';
 
 interface ShippingRate {
   weightRange: string;
@@ -8,6 +8,96 @@ interface ShippingRate {
   fedexPrice: string;
   dhlPrice: string;
 }
+
+interface ShippingMethodOption {
+  id: string;
+  name: string;
+  pricePerKg: number;
+  description: string;
+  deliveryTime: string;
+}
+
+interface AgentShippingOptions {
+  id: string;
+  name: string;
+  methods: ShippingMethodOption[];
+}
+
+const agentShippingOptions: AgentShippingOptions[] = [
+  {
+    id: "cssbuy",
+    name: "CSSBUY",
+    methods: [
+      {
+        id: "eub",
+        name: "EUB",
+        pricePerKg: 17.52,
+        description: "שירות חסכוני ומהימן, מתאים למשלוחים קטנים עד 2 ק״ג",
+        deliveryTime: "15-25 ימים",
+      }
+    ]
+  },
+  {
+    id: "basetao",
+    name: "Basetao",
+    methods: [
+      {
+        id: "eub",
+        name: "EUB",
+        pricePerKg: 17.52,
+        description: "שירות חסכוני ומהימן, מתאים למשלוחים קטנים עד 2 ק״ג",
+        deliveryTime: "15-25 ימים",
+      }
+    ]
+  },
+  {
+    id: "kakobuy",
+    name: "KAKOBUY",
+    methods: [
+      {
+        id: "eub",
+        name: "EUB",
+        pricePerKg: 17.52,
+        description: "שירות חסכוני ומהימן, מתאים למשלוחים קטנים עד 2 ק״ג",
+        deliveryTime: "15-25 ימים",
+      },
+      {
+        id: "israel-line-f",
+        name: "Israel Line-F",
+        pricePerKg: 18.95,
+        description: "שירות משלוח ייעודי לישראל, יחס מחיר-מהירות טוב",
+        deliveryTime: "12-20 ימים",
+      }
+    ]
+  },
+  {
+    id: "ponybuy",
+    name: "PONYBUY",
+    methods: [
+      {
+        id: "china-post",
+        name: "China Post Registered Packet",
+        pricePerKg: 25.19,
+        description: "שירות דואר רשום סטנדרטי, מחיר סביר",
+        deliveryTime: "20-35 ימים",
+      },
+      {
+        id: "aramex",
+        name: "Aramex",
+        pricePerKg: 25.36,
+        description: "משלוח מהיר יחסית, חברה מוכרת ואמינה",
+        deliveryTime: "10-15 ימים",
+      },
+      {
+        id: "pb-express",
+        name: "P&B Express (Tax Free)",
+        pricePerKg: 26.34,
+        description: "משלוח ללא מיסי ייבוא, מומלץ למשלוחים גדולים",
+        deliveryTime: "12-20 ימים",
+      }
+    ]
+  }
+];
 
 const shippingRates: ShippingRate[] = [
   { weightRange: "0.5 - 1 ק״ג", emsPrice: "120-180 ₪", fedexPrice: "240-280 ₪", dhlPrice: "260-320 ₪" },
@@ -20,6 +110,8 @@ const shippingRates: ShippingRate[] = [
   { weightRange: "15 - 20 ק״ג", emsPrice: "1200-1500 ₪", fedexPrice: "1600-2000 ₪", dhlPrice: "1900-2400 ₪" },
 ];
 
+const dollarToShekelRate = 3.7; // המרה משוערת
+
 const ShippingCosts = () => {
   const [searchWeight, setSearchWeight] = useState("");
   const [activeTab, setActiveTab] = useState<'table' | 'calculator'>('table');
@@ -30,22 +122,43 @@ const ShippingCosts = () => {
       )
     : shippingRates;
 
-  const [calculatedWeight, setCalculatedWeight] = useState<number>(1);
+  // מחשבון החדש
+  const [selectedAgent, setSelectedAgent] = useState<string>(agentShippingOptions[0].id);
+  const [selectedMethod, setSelectedMethod] = useState<string>(agentShippingOptions[0].methods[0].id);
+  const [packageWeight, setPackageWeight] = useState<number>(1);
+  const [isCalculating, setIsCalculating] = useState<boolean>(false);
+
+  // מצא את הסוכן הנבחר
+  const currentAgent = agentShippingOptions.find(agent => agent.id === selectedAgent);
   
-  const calculateShipping = (weight: number) => {
-    // Simple estimation logic - can be refined with more accurate data
-    const emsBaseRate = 150;
-    const fedexBaseRate = 260;
-    const dhlBaseRate = 290;
+  // מצא את שיטת המשלוח הנבחרת
+  const currentMethod = currentAgent?.methods.find(method => method.id === selectedMethod);
+
+  // חשב את עלות המשלוח
+  const calculateShippingCost = () => {
+    if (!currentMethod) return 0;
     
-    const emsRate = Math.round(emsBaseRate * weight);
-    const fedexRate = Math.round(fedexBaseRate * weight);
-    const dhlRate = Math.round(dhlBaseRate * weight);
+    // הדמיית חישוב (לסימולציה בלבד)
+    setIsCalculating(true);
+    setTimeout(() => {
+      setIsCalculating(false);
+    }, 800);
     
-    return { emsRate, fedexRate, dhlRate };
+    return currentMethod.pricePerKg * packageWeight;
   };
-  
-  const { emsRate, fedexRate, dhlRate } = calculateShipping(calculatedWeight);
+
+  // המרת דולר לשקל
+  const shippingCostUSD = calculateShippingCost();
+  const shippingCostILS = shippingCostUSD * dollarToShekelRate;
+
+  // טיפול בשינוי הסוכן - איפוס שיטת המשלוח לברירת המחדל של הסוכן החדש
+  const handleAgentChange = (agentId: string) => {
+    setSelectedAgent(agentId);
+    const newAgent = agentShippingOptions.find(agent => agent.id === agentId);
+    if (newAgent && newAgent.methods.length > 0) {
+      setSelectedMethod(newAgent.methods[0].id);
+    }
+  };
 
   return (
     <section id="shipping-costs" className="section-padding">
@@ -148,52 +261,127 @@ const ShippingCosts = () => {
 
           {activeTab === 'calculator' && (
             <div className="glass-card rounded-xl p-6">
-              <div className="max-w-md mx-auto">
+              <div className="max-w-xl mx-auto">
                 <div className="flex items-center justify-center mb-8">
-                  <Package2 size={24} className="text-primary mr-2" />
-                  <h3 className="text-xl font-medium">מחשבון משלוח משוער</h3>
+                  <Calculator size={24} className="text-primary ml-2" />
+                  <h3 className="text-xl font-medium">מחשבון עלויות משלוח</h3>
                 </div>
                 
-                <div className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {/* בחירת סוכן */}
+                  <div>
+                    <label htmlFor="agent" className="block mb-2 font-medium">
+                      בחר סוכן
+                    </label>
+                    <select
+                      id="agent"
+                      value={selectedAgent}
+                      onChange={(e) => handleAgentChange(e.target.value)}
+                      className="glass-card w-full py-3 px-4 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      {agentShippingOptions.map((agent) => (
+                        <option key={agent.id} value={agent.id}>
+                          {agent.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* בחירת שיטת משלוח */}
+                  <div>
+                    <label htmlFor="shipping-method" className="block mb-2 font-medium">
+                      שיטת משלוח
+                    </label>
+                    <select
+                      id="shipping-method"
+                      value={selectedMethod}
+                      onChange={(e) => setSelectedMethod(e.target.value)}
+                      className="glass-card w-full py-3 px-4 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      {currentAgent?.methods.map((method) => (
+                        <option key={method.id} value={method.id}>
+                          {method.name} (${method.pricePerKg}/ק"ג)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* פרטי שיטת המשלוח */}
+                {currentMethod && (
+                  <div className="bg-secondary/30 rounded-lg p-4 mb-6">
+                    <h4 className="font-medium mb-2">{currentMethod.name}</h4>
+                    <p className="text-muted-foreground text-sm mb-2">{currentMethod.description}</p>
+                    <div className="flex items-center text-sm">
+                      <ArrowRight size={14} className="ml-1 text-primary" />
+                      <span>זמן משלוח משוער: {currentMethod.deliveryTime}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* הזנת משקל */}
+                <div className="mb-8">
                   <label htmlFor="weight" className="block mb-2 font-medium">
                     משקל החבילה (בק״ג)
                   </label>
                   <input
                     type="number"
                     id="weight"
-                    min="0.5"
+                    min="0.1"
                     max="30"
-                    step="0.5"
-                    value={calculatedWeight}
-                    onChange={(e) => setCalculatedWeight(Number(e.target.value))}
+                    step="0.1"
+                    value={packageWeight}
+                    onChange={(e) => setPackageWeight(Number(e.target.value))}
                     className="glass-card w-full py-3 px-4 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
                 
-                <div className="glass-card rounded-xl overflow-hidden mt-8">
-                  <div className="bg-secondary/30 p-4 text-center">
-                    <h4 className="font-medium">מחיר משוער למשלוח {calculatedWeight} ק״ג</h4>
+                {/* תוצאת החישוב */}
+                <div className="glass-card rounded-xl overflow-hidden bg-white">
+                  <div className="bg-primary/10 p-4 text-center">
+                    <h4 className="font-medium">עלות משלוח משוערת</h4>
                   </div>
-                  <div className="p-4">
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div className="p-3">
-                        <div className="text-sm text-muted-foreground mb-1">EMS</div>
-                        <div className="text-xl font-medium">{emsRate} ₪</div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div className="p-3 bg-secondary/20 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">מחיר בדולר</div>
+                        <div className="flex items-center justify-center">
+                          {isCalculating ? (
+                            <RefreshCw size={20} className="animate-spin text-primary" />
+                          ) : (
+                            <div className="text-xl font-medium">${shippingCostUSD.toFixed(2)}</div>
+                          )}
+                        </div>
                       </div>
-                      <div className="p-3">
-                        <div className="text-sm text-muted-foreground mb-1">FedEx</div>
-                        <div className="text-xl font-medium">{fedexRate} ₪</div>
-                      </div>
-                      <div className="p-3">
-                        <div className="text-sm text-muted-foreground mb-1">DHL</div>
-                        <div className="text-xl font-medium">{dhlRate} ₪</div>
+                      <div className="p-3 bg-secondary/20 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">מחיר בשקלים</div>
+                        <div className="flex items-center justify-center">
+                          {isCalculating ? (
+                            <RefreshCw size={20} className="animate-spin text-primary" />
+                          ) : (
+                            <div className="text-xl font-medium">₪{shippingCostILS.toFixed(2)}</div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="mt-4 text-center text-sm text-muted-foreground">
-                  * המחיר המחושב הוא הערכה בלבד ומבוסס על תעריפים ממוצעים
+                <div className="mt-6 bg-primary/5 rounded-lg p-4 text-sm text-muted-foreground">
+                  <div className="flex items-start">
+                    <Package2 size={18} className="ml-2 mt-0.5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="mb-1">
+                        <strong>אודות עלויות המשלוח:</strong>
+                      </p>
+                      <ul className="space-y-1 list-disc pr-5">
+                        <li>המחיר המחושב הוא הערכה בלבד המבוססת על מחיר לק"ג × משקל החבילה.</li>
+                        <li>העלות הסופית עשויה להשתנות בהתאם לנפח החבילה, המדינה המדויקת ודמי טיפול.</li>
+                        <li>שער ההמרה לשקל הוא משוער (שער נוכחי: ${dollarToShekelRate} ₪ לדולר).</li>
+                        <li>רוב הסוכנים מציעים EUB כאופציית משלוח מועדפת לישראל.</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
