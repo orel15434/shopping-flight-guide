@@ -1,11 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import QCPost, { QCPostType } from '../components/QCPost';
 import AddQCPostForm from '../components/AddQCPostForm';
 import { Button } from '../components/ui/button';
 import { PlusCircle, X, Images } from 'lucide-react';
+import { useToast } from "../hooks/use-toast";
 
 // נתונים לדוגמה
 const initialPosts: QCPostType[] = [
@@ -55,13 +56,49 @@ const initialPosts: QCPostType[] = [
   },
 ];
 
+// מפתח עבור localStorage
+const STORAGE_KEY = 'qc_gallery_posts';
+
 const QCGallery = () => {
-  const [posts, setPosts] = useState<QCPostType[]>(initialPosts);
+  const { toast } = useToast();
+  const [posts, setPosts] = useState<QCPostType[]>([]);
   const [isAddingPost, setIsAddingPost] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // טעינת פוסטים מ-localStorage כשהקומפוננטה מאותחלת
+  useEffect(() => {
+    const loadPosts = () => {
+      setIsLoading(true);
+      const savedPosts = localStorage.getItem(STORAGE_KEY);
+      
+      if (savedPosts) {
+        try {
+          setPosts(JSON.parse(savedPosts));
+        } catch (error) {
+          console.error('Error parsing posts from localStorage:', error);
+          setPosts(initialPosts);
+        }
+      } else {
+        setPosts(initialPosts);
+      }
+      
+      setIsLoading(false);
+    };
+    
+    loadPosts();
+  }, []);
+  
+  // שמירת פוסטים ב-localStorage כשהם משתנים
+  useEffect(() => {
+    if (!isLoading && posts.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+    }
+  }, [posts, isLoading]);
   
   const addNewPost = (post: QCPostType) => {
-    setPosts([post, ...posts]);
+    const updatedPosts = [post, ...posts];
+    setPosts(updatedPosts);
     setIsAddingPost(false);
   };
   
@@ -72,6 +109,11 @@ const QCGallery = () => {
         // הדירוג יהיה קשור למשתמש מסוים ויישמר בבסיס נתונים
         const newVotes = post.votes + 1;
         const newRating = ((post.rating * post.votes) + rating) / newVotes;
+        
+        toast({
+          title: "תודה על הדירוג!",
+          description: `דירגת את המוצר ${post.title} ב-${rating} כוכבים`,
+        });
         
         return {
           ...post,
@@ -99,6 +141,7 @@ const QCGallery = () => {
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               כאן תוכלו לראות תמונות QC של מוצרים שקנו משתמשים אחרים, לקבל השראה ולשתף את התמונות שלכם.
+              התמונות שתעלו יישמרו בענן ולא יימחקו בעת רענון הדף.
             </p>
           </div>
           

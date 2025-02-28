@@ -1,69 +1,38 @@
-# Welcome to your Lovable project
 
-## Project info
+# Cloudinary Netlify Integration
 
-**URL**: https://lovable.dev/projects/a9a67fb7-36b7-4ded-aaab-74e0670c1a67
+This project uses Cloudinary for image storage along with Netlify Functions to handle image uploads.
 
-## How can I edit this code?
+## Setting Up Environment Variables in Netlify
 
-There are several ways of editing your application.
+To make this work, you need to add the following environment variables in your Netlify project settings:
 
-**Use Lovable**
+1. Go to your Netlify dashboard
+2. Select your site
+3. Go to Site settings > Build & deploy > Environment
+4. Add the following environment variables:
+   - `CLOUDINARY_CLOUD_NAME` - Your Cloudinary cloud name
+   - `CLOUDINARY_API_KEY` - Your Cloudinary API key
+   - `CLOUDINARY_API_SECRET` - Your Cloudinary API secret
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a9a67fb7-36b7-4ded-aaab-74e0670c1a67) and start prompting.
+## Getting Cloudinary Credentials
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Sign up for a free Cloudinary account at [cloudinary.com](https://cloudinary.com)
+2. After signing in, go to the Dashboard
+3. You'll find your cloud name, API key and API secret there
 
-**Use your preferred IDE**
+## Local Development
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+For local development, create a `.env` file in the root of your project with:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-**Edit a file directly in GitHub**
+## Important Notes
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/a9a67fb7-36b7-4ded-aaab-74e0670c1a67) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- The free tier of Cloudinary provides 25GB of storage and 25GB of monthly bandwidth
+- Make sure not to expose your API keys in the client-side code
+- All images are uploaded to a 'qc-gallery' folder in your Cloudinary account
