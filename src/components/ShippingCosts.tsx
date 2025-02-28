@@ -40,6 +40,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "eub",
         name: "EUB",
         prices: [
+          { weight: 1, price: 17.22 }, // הוספתי מחיר ל-1 קילו
           { weight: 2, price: 30.94 },
           { weight: 3, price: 44.70 }
         ],
@@ -59,6 +60,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "eub",
         name: "EUB",
         prices: [
+          { weight: 1, price: 17.22 }, // הוספתי מחיר ל-1 קילו
           { weight: 2, price: 30.94 },
           { weight: 3, price: 44.48 },
           { weight: 4, price: 58.11 },
@@ -80,6 +82,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "eub",
         name: "EUB",
         prices: [
+          { weight: 1, price: 17.47 }, // הוספתי מחיר ל-1 קילו
           { weight: 2, price: 30.31 },
           { weight: 3, price: 43.15 },
           { weight: 4, price: 55.99 },
@@ -95,6 +98,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "israel-line-f",
         name: "Israel Line-F",
         prices: [
+          { weight: 1, price: 18.9 }, // הוספתי מחיר ל-1 קילו
           { weight: 2, price: 32.47 },
           { weight: 3, price: 46.04 },
           { weight: 4, price: 59.61 },
@@ -116,6 +120,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "china-post",
         name: "China Post Registered Packet",
         prices: [
+          { weight: 1, price: 25.19 }, // הוספתי מחיר ל-1 קילו
           { weight: 2, price: 42.5 }
         ],
         description: "שירות דואר רשום סטנדרטי, מתאים למשלוחים עד 2 ק״ג",
@@ -128,6 +133,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "aramex",
         name: "Aramex",
         prices: [
+          { weight: 1, price: 25.36 }, // הוספתי מחיר ל-1 קילו
           { weight: 2, price: 37.68 },
           { weight: 3, price: 49.99 },
           { weight: 4, price: 62.12 },
@@ -143,6 +149,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "pb-express",
         name: "P&B Express (Tax Free)",
         prices: [
+          { weight: 1, price: 26.34 }, // הוספתי מחיר ל-1 קילו
           { weight: 2, price: 42.56 },
           { weight: 3, price: 58.79 },
           { weight: 4, price: 75.01 },
@@ -184,8 +191,8 @@ const ShippingCosts = () => {
   // מחשבון החדש
   const [selectedAgent, setSelectedAgent] = useState<string>(agentShippingOptions[0].id);
   const [selectedMethod, setSelectedMethod] = useState<string>(agentShippingOptions[0].methods[0].id);
-  const [packageWeight, setPackageWeight] = useState<number>(2);
-  
+  const [packageWeight, setPackageWeight] = useState<number>(1); // כברירת מחדל מוגדר כעת ל-1 קילו
+
   // מצא את הסוכן הנבחר
   const currentAgent = agentShippingOptions.find(agent => agent.id === selectedAgent);
   
@@ -557,7 +564,7 @@ const ShippingCosts = () => {
                         <strong>אודות עלויות המשלוח:</strong>
                       </p>
                       <ul className="space-y-1 list-disc pr-5">
-                        <li>המחירים המוצגים הם עבור משקלים ספציפיים (2, 3, 4, 5 ק"ג) כפי שמוצג באתרי הסוכנים.</li>
+                        <li>המחירים המוצגים הם עבור משקלים ספציפיים (1, 2, 3, 4, 5 ק"ג) כפי שמוצג באתרי הסוכנים.</li>
                         <li>לכל סוכן יש מגבלות משקל שונות. למשל, CSSBUY מאפשר שליחה באמצעות EUB עד 3 ק"ג בלבד.</li>
                         <li>שער ההמרה לשקל הוא משוער (שער נוכחי: ${dollarToShekelRate} ₪ לדולר).</li>
                         <li>המחיר הסופי עשוי להשתנות בהתאם לממדי החבילה ומדיניות חברת המשלוחים.</li>
