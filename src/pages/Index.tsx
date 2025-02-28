@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import HeroSection from '../components/HeroSection';
 import AgentCard, { AgentInfo } from '../components/AgentCard';
 import ShippingCosts from '../components/ShippingCosts';
 import Footer from '../components/Footer';
-import { CheckCircle, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowDown, ArrowLeft, ArrowRight, Camera } from 'lucide-react';
 
-const agents: AgentInfo[] = [
+export const agents: AgentInfo[] = [
   {
     id: "cssbuy",
     name: "CSSBUY",
@@ -168,6 +169,30 @@ const Index = () => {
                 <span>למידע על מחירי משלוח</span>
                 <ArrowDown size={18} className="mr-2" />
               </button>
+            </div>
+          </div>
+        </section>
+        
+        {/* QC Gallery Promo */}
+        <section className="section-padding bg-gradient-to-r from-primary/10 to-secondary/40">
+          <div className="container">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-primary/20 text-primary">
+                <Camera size={32} />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4 heading-gradient">
+                גלריית תמונות QC
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+                בדקו תמונות QC ממוצרים שקנו חברי הקהילה, דרגו את האיכות ושתפו את המוצרים שלכם
+              </p>
+              <Link 
+                to="/qc-gallery"
+                className="button-animation inline-flex items-center px-6 py-3 bg-primary text-white rounded-lg font-medium shadow-md hover:shadow-lg"
+              >
+                <span>לגלריית התמונות</span>
+                <ArrowLeft size={18} className="mr-2" />
+              </Link>
             </div>
           </div>
         </section>
