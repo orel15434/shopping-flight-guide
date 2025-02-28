@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { Package2, Search, Calculator } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Package2, Search, Calculator, ThumbsUp, Zap } from 'lucide-react';
 
 interface ShippingRate {
   weightRange: string;
@@ -9,12 +9,20 @@ interface ShippingRate {
   dhlPrice: string;
 }
 
+interface PricePoint {
+  weight: number;
+  price: number;
+}
+
 interface ShippingMethodOption {
   id: string;
   name: string;
-  pricePerKg: number;
+  prices: PricePoint[];
   description: string;
   deliveryTime: string;
+  maxWeight: number;
+  minDeliveryDays: number;
+  maxDeliveryDays: number;
 }
 
 interface AgentShippingOptions {
@@ -31,9 +39,15 @@ const agentShippingOptions: AgentShippingOptions[] = [
       {
         id: "eub",
         name: "EUB",
-        pricePerKg: 17.52,
-        description: "שירות חסכוני ומהימן, מתאים למשלוחים קטנים עד 2 ק״ג",
-        deliveryTime: "15-25 ימים",
+        prices: [
+          { weight: 2, price: 30.94 },
+          { weight: 3, price: 44.70 }
+        ],
+        description: "שירות חסכוני ומהימן, מתאים למשלוחים קטנים עד 3 ק״ג",
+        deliveryTime: "15-30 ימים",
+        maxWeight: 3,
+        minDeliveryDays: 15,
+        maxDeliveryDays: 30
       }
     ]
   },
@@ -44,9 +58,17 @@ const agentShippingOptions: AgentShippingOptions[] = [
       {
         id: "eub",
         name: "EUB",
-        pricePerKg: 17.52,
-        description: "שירות חסכוני ומהימן, מתאים למשלוחים קטנים עד 2 ק״ג",
-        deliveryTime: "15-25 ימים",
+        prices: [
+          { weight: 2, price: 30.94 },
+          { weight: 3, price: 44.48 },
+          { weight: 4, price: 58.11 },
+          { weight: 5, price: 71.74 }
+        ],
+        description: "שירות חסכוני ומהימן, מתאים למשלוחים עד 5 ק״ג",
+        deliveryTime: "15-20 ימים",
+        maxWeight: 5,
+        minDeliveryDays: 15,
+        maxDeliveryDays: 20
       }
     ]
   },
@@ -57,16 +79,32 @@ const agentShippingOptions: AgentShippingOptions[] = [
       {
         id: "eub",
         name: "EUB",
-        pricePerKg: 17.52,
-        description: "שירות חסכוני ומהימן, מתאים למשלוחים קטנים עד 2 ק״ג",
-        deliveryTime: "15-25 ימים",
+        prices: [
+          { weight: 2, price: 30.31 },
+          { weight: 3, price: 43.15 },
+          { weight: 4, price: 55.99 },
+          { weight: 5, price: 68.83 }
+        ],
+        description: "שירות חסכוני ומהימן, מתאים למשלוחים עד 5 ק״ג",
+        deliveryTime: "15-20 ימים",
+        maxWeight: 5,
+        minDeliveryDays: 15,
+        maxDeliveryDays: 20
       },
       {
         id: "israel-line-f",
         name: "Israel Line-F",
-        pricePerKg: 18.95,
+        prices: [
+          { weight: 2, price: 32.47 },
+          { weight: 3, price: 46.04 },
+          { weight: 4, price: 59.61 },
+          { weight: 5, price: 73.17 }
+        ],
         description: "שירות משלוח ייעודי לישראל, יחס מחיר-מהירות טוב",
-        deliveryTime: "12-20 ימים",
+        deliveryTime: "7-18 ימים",
+        maxWeight: 5,
+        minDeliveryDays: 7,
+        maxDeliveryDays: 18
       }
     ]
   },
@@ -77,23 +115,44 @@ const agentShippingOptions: AgentShippingOptions[] = [
       {
         id: "china-post",
         name: "China Post Registered Packet",
-        pricePerKg: 25.19,
-        description: "שירות דואר רשום סטנדרטי, מחיר סביר",
-        deliveryTime: "20-35 ימים",
+        prices: [
+          { weight: 2, price: 42.5 }
+        ],
+        description: "שירות דואר רשום סטנדרטי, מתאים למשלוחים עד 2 ק״ג",
+        deliveryTime: "7-15 ימים",
+        maxWeight: 2,
+        minDeliveryDays: 7,
+        maxDeliveryDays: 15
       },
       {
         id: "aramex",
         name: "Aramex",
-        pricePerKg: 25.36,
+        prices: [
+          { weight: 2, price: 37.68 },
+          { weight: 3, price: 49.99 },
+          { weight: 4, price: 62.12 },
+          { weight: 5, price: 74.44 }
+        ],
         description: "משלוח מהיר יחסית, חברה מוכרת ואמינה",
-        deliveryTime: "10-15 ימים",
+        deliveryTime: "5-8 ימים",
+        maxWeight: 5,
+        minDeliveryDays: 5,
+        maxDeliveryDays: 8
       },
       {
         id: "pb-express",
         name: "P&B Express (Tax Free)",
-        pricePerKg: 26.34,
+        prices: [
+          { weight: 2, price: 42.56 },
+          { weight: 3, price: 58.79 },
+          { weight: 4, price: 75.01 },
+          { weight: 5, price: 91.23 }
+        ],
         description: "משלוח ללא מיסי ייבוא, מומלץ למשלוחים גדולים",
-        deliveryTime: "12-20 ימים",
+        deliveryTime: "8-20 ימים",
+        maxWeight: 5,
+        minDeliveryDays: 8,
+        maxDeliveryDays: 20
       }
     ]
   }
@@ -125,7 +184,7 @@ const ShippingCosts = () => {
   // מחשבון החדש
   const [selectedAgent, setSelectedAgent] = useState<string>(agentShippingOptions[0].id);
   const [selectedMethod, setSelectedMethod] = useState<string>(agentShippingOptions[0].methods[0].id);
-  const [packageWeight, setPackageWeight] = useState<number>(1);
+  const [packageWeight, setPackageWeight] = useState<number>(2);
   
   // מצא את הסוכן הנבחר
   const currentAgent = agentShippingOptions.find(agent => agent.id === selectedAgent);
@@ -133,15 +192,42 @@ const ShippingCosts = () => {
   // מצא את שיטת המשלוח הנבחרת
   const currentMethod = currentAgent?.methods.find(method => method.id === selectedMethod);
 
-  // חשב את עלות המשלוח
+  // חשב את עלות המשלוח לפי הטבלת מחירים
   const calculateShippingCost = () => {
     if (!currentMethod) return 0;
-    return currentMethod.pricePerKg * packageWeight;
+    
+    // בדיקה אם המשקל גדול מהמקסימום המותר לשיטה זו
+    if (packageWeight > currentMethod.maxWeight) {
+      return -1; // קוד שגיאה למשקל חורג
+    }
+    
+    // מצא את נקודת המחיר הקרובה ביותר למשקל המבוקש (עיגול כלפי מעלה)
+    const pricePoint = [...currentMethod.prices]
+      .sort((a, b) => a.weight - b.weight)
+      .find(point => point.weight >= packageWeight);
+    
+    if (pricePoint) {
+      return pricePoint.price;
+    } else if (currentMethod.prices.length > 0) {
+      // אם אין מחיר מדויק, קח את המחיר לפי המשקל הגדול ביותר
+      const highestPricePoint = currentMethod.prices.reduce(
+        (max, point) => (point.weight > max.weight ? point : max),
+        currentMethod.prices[0]
+      );
+      
+      // חישוב פשוט: יחס ליניארי
+      return (packageWeight / highestPricePoint.weight) * highestPricePoint.price;
+    }
+    
+    return 0;
   };
 
   // המרת דולר לשקל
   const shippingCostUSD = calculateShippingCost();
-  const shippingCostILS = shippingCostUSD * dollarToShekelRate;
+  const shippingCostILS = shippingCostUSD > 0 ? shippingCostUSD * dollarToShekelRate : -1;
+
+  // בדיקה אם המשקל חורג מהמקסימום המותר
+  const isWeightExceeded = shippingCostUSD === -1;
 
   // טיפול בשינוי הסוכן - איפוס שיטת המשלוח לברירת המחדל של הסוכן החדש
   const handleAgentChange = (agentId: string) => {
@@ -151,6 +237,68 @@ const ShippingCosts = () => {
       setSelectedMethod(newAgent.methods[0].id);
     }
   };
+
+  // מצא את כל שיטות המשלוח האפשריות עבור המשקל הנוכחי
+  const availableShippingOptions = useMemo(() => {
+    const options: Array<{
+      agentId: string;
+      agentName: string;
+      methodId: string;
+      methodName: string;
+      price: number;
+      minDeliveryDays: number;
+      maxDeliveryDays: number;
+    }> = [];
+
+    agentShippingOptions.forEach(agent => {
+      agent.methods.forEach(method => {
+        if (packageWeight <= method.maxWeight) {
+          // חישוב מחיר לשיטה זו
+          let price = 0;
+          const pricePoint = [...method.prices]
+            .sort((a, b) => a.weight - b.weight)
+            .find(point => point.weight >= packageWeight);
+          
+          if (pricePoint) {
+            price = pricePoint.price;
+          } else if (method.prices.length > 0) {
+            const highestPricePoint = method.prices.reduce(
+              (max, point) => (point.weight > max.weight ? point : max),
+              method.prices[0]
+            );
+            price = (packageWeight / highestPricePoint.weight) * highestPricePoint.price;
+          }
+
+          options.push({
+            agentId: agent.id,
+            agentName: agent.name,
+            methodId: method.id,
+            methodName: method.name,
+            price,
+            minDeliveryDays: method.minDeliveryDays,
+            maxDeliveryDays: method.maxDeliveryDays
+          });
+        }
+      });
+    });
+
+    return options;
+  }, [packageWeight]);
+
+  // מצא את האפשרות הזולה ביותר והמהירה ביותר
+  const cheapestOption = useMemo(() => {
+    return availableShippingOptions.length > 0
+      ? availableShippingOptions.reduce((min, option) => 
+          option.price < min.price ? option : min, availableShippingOptions[0])
+      : null;
+  }, [availableShippingOptions]);
+
+  const fastestOption = useMemo(() => {
+    return availableShippingOptions.length > 0
+      ? availableShippingOptions.reduce((fastest, option) => 
+          option.minDeliveryDays < fastest.minDeliveryDays ? option : fastest, availableShippingOptions[0])
+      : null;
+  }, [availableShippingOptions]);
 
   return (
     <section id="shipping-costs" className="section-padding">
@@ -259,6 +407,48 @@ const ShippingCosts = () => {
                   <h3 className="text-xl font-medium">מחשבון עלויות משלוח</h3>
                 </div>
                 
+                {/* המלצות עבור המשלוח הזול והמהיר */}
+                {availableShippingOptions.length > 0 && (
+                  <div className="mb-8 bg-secondary/20 rounded-xl p-5">
+                    <h4 className="text-lg font-medium text-center mb-4">המלצות משלוח</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {cheapestOption && (
+                        <div className="bg-white rounded-lg p-4 shadow-sm flex">
+                          <div className="flex-shrink-0 ml-3">
+                            <div className="bg-green-100 rounded-full p-2 text-green-600">
+                              <ThumbsUp size={20} />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-medium">האפשרות הזולה ביותר</div>
+                            <div className="text-sm text-muted-foreground">
+                              {cheapestOption.agentName} - {cheapestOption.methodName}
+                            </div>
+                            <div className="text-sm font-medium text-primary">${cheapestOption.price.toFixed(2)}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {fastestOption && (
+                        <div className="bg-white rounded-lg p-4 shadow-sm flex">
+                          <div className="flex-shrink-0 ml-3">
+                            <div className="bg-blue-100 rounded-full p-2 text-blue-600">
+                              <Zap size={20} />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-medium">האפשרות המהירה ביותר</div>
+                            <div className="text-sm text-muted-foreground">
+                              {fastestOption.agentName} - {fastestOption.methodName}
+                            </div>
+                            <div className="text-sm font-medium text-primary">{fastestOption.minDeliveryDays}-{fastestOption.maxDeliveryDays} ימים</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                   {/* בחירת סוכן */}
                   <div>
@@ -291,8 +481,8 @@ const ShippingCosts = () => {
                       className="glass-card w-full py-3 px-4 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       {currentAgent?.methods.map((method) => (
-                        <option key={method.id} value={method.id}>
-                          {method.name} (${method.pricePerKg}/ק"ג)
+                        <option key={method.id} value={method.id} disabled={packageWeight > method.maxWeight}>
+                          {method.name} (עד {method.maxWeight} ק"ג)
                         </option>
                       ))}
                     </select>
@@ -307,6 +497,9 @@ const ShippingCosts = () => {
                     <div className="flex items-center text-sm">
                       <span>זמן משלוח משוער: {currentMethod.deliveryTime}</span>
                     </div>
+                    <div className="text-sm mt-2 text-muted-foreground">
+                      מקסימום משקל לשליחה: <span className="font-medium">{currentMethod.maxWeight} ק"ג</span>
+                    </div>
                   </div>
                 )}
                 
@@ -318,7 +511,7 @@ const ShippingCosts = () => {
                   <input
                     type="number"
                     id="weight"
-                    min="0.1"
+                    min="0.5"
                     max="30"
                     step="0.1"
                     value={packageWeight}
@@ -333,16 +526,26 @@ const ShippingCosts = () => {
                     <h4 className="font-medium">עלות משלוח משוערת</h4>
                   </div>
                   <div className="p-6">
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="p-3 bg-secondary/20 rounded-lg">
-                        <div className="text-sm text-muted-foreground mb-1">מחיר בדולר</div>
-                        <div className="text-xl font-medium">${shippingCostUSD.toFixed(2)}</div>
+                    {isWeightExceeded ? (
+                      <div className="text-center py-4 text-red-500">
+                        <p className="font-medium">חריגת משקל!</p>
+                        <p className="text-sm mt-1">
+                          המשקל שהוזן ({packageWeight} ק"ג) חורג מהמשקל המקסימלי 
+                          ({currentMethod?.maxWeight} ק"ג) עבור שיטת המשלוח הנבחרת.
+                        </p>
                       </div>
-                      <div className="p-3 bg-secondary/20 rounded-lg">
-                        <div className="text-sm text-muted-foreground mb-1">מחיר בשקלים</div>
-                        <div className="text-xl font-medium">₪{shippingCostILS.toFixed(2)}</div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        <div className="p-3 bg-secondary/20 rounded-lg">
+                          <div className="text-sm text-muted-foreground mb-1">מחיר בדולר</div>
+                          <div className="text-xl font-medium">${shippingCostUSD.toFixed(2)}</div>
+                        </div>
+                        <div className="p-3 bg-secondary/20 rounded-lg">
+                          <div className="text-sm text-muted-foreground mb-1">מחיר בשקלים</div>
+                          <div className="text-xl font-medium">₪{shippingCostILS.toFixed(2)}</div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
                 
@@ -354,10 +557,10 @@ const ShippingCosts = () => {
                         <strong>אודות עלויות המשלוח:</strong>
                       </p>
                       <ul className="space-y-1 list-disc pr-5">
-                        <li>המחיר המחושב הוא הערכה בלבד המבוססת על מחיר לק"ג × משקל החבילה.</li>
-                        <li>העלות הסופית עשויה להשתנות בהתאם לנפח החבילה, המדינה המדויקת ודמי טיפול.</li>
+                        <li>המחירים המוצגים הם עבור משקלים ספציפיים (2, 3, 4, 5 ק"ג) כפי שמוצג באתרי הסוכנים.</li>
+                        <li>לכל סוכן יש מגבלות משקל שונות. למשל, CSSBUY מאפשר שליחה באמצעות EUB עד 3 ק"ג בלבד.</li>
                         <li>שער ההמרה לשקל הוא משוער (שער נוכחי: ${dollarToShekelRate} ₪ לדולר).</li>
-                        <li>רוב הסוכנים מציעים EUB כאופציית משלוח מועדפת לישראל.</li>
+                        <li>המחיר הסופי עשוי להשתנות בהתאם לממדי החבילה ומדיניות חברת המשלוחים.</li>
                       </ul>
                     </div>
                   </div>
