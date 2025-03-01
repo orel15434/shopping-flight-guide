@@ -1,71 +1,104 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../integrations/supabase/client';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import QCPost, { QCPostType } from '../components/QCPost';
 import AddQCPostForm from '../components/AddQCPostForm';
 import { Button } from '../components/ui/button';
 import { PlusCircle, X, Images } from 'lucide-react';
-
-// נתונים לדוגמה
-const initialPosts: QCPostType[] = [
-  {
-    id: '1',
-    title: 'נעלי YEEZY 350 V2 Zebra',
-    description: 'קיבלתי את הנעליים מהסוכן kakobuy - האיכות מעולה ואין הבדל מהתמונות באתר.',
-    images: [
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1470&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1575537302964-96cd47c06b1b?q=80&w=1470&auto=format&fit=crop',
-    ],
-    productLink: 'https://weidian.com/item.html?itemID=58372653821',
-    agent: 'kakobuy',
-    timestamp: new Date().toISOString(),
-    rating: 4.5,
-    votes: 12,
-    userRatings: {} // בהמשך, כאשר יש מערכת משתמשים, נשמור כאן את הדירוגים של משתמשים ספציפיים
-  },
-  {
-    id: '2',
-    title: 'חולצת ESSENTIALS',
-    description: 'איכות הבד מעולה, הלוגו מדויק. ההזמנה הגיעה בזמן. הגודל מתאים לגמרי להנחיות המידות.',
-    images: [
-      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1480&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1523381294911-8d3cead13475?q=80&w=1470&auto=format&fit=crop',
-    ],
-    productLink: 'https://item.taobao.com/item.htm?id=65422685432',
-    agent: 'cssbuy',
-    timestamp: new Date().toISOString(),
-    rating: 4.8,
-    votes: 8,
-    userRatings: {}
-  },
-  {
-    id: '3',
-    title: 'תיק NIKE',
-    description: 'תיק ספורט מעולה, תפרים מדויקים וחומר עמיד. הלוגו נראה מקורי לחלוטין.',
-    images: [
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1470&auto=format&fit=crop',
-    ],
-    productLink: 'https://detail.1688.com/offer/675437215939.html',
-    agent: 'ponybuy',
-    timestamp: new Date().toISOString(),
-    rating: 4.2,
-    votes: 5,
-    userRatings: {}
-  },
-];
+import { useToast } from '../hooks/use-toast';
 
 const QCGallery = () => {
-  const [posts, setPosts] = useState<QCPostType[]>(initialPosts);
+  const [posts, setPosts] = useState<QCPostType[]>([]);
   const [isAddingPost, setIsAddingPost] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
-  const addNewPost = (post: QCPostType) => {
-    setPosts([post, ...posts]);
-    setIsAddingPost(false);
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+  
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('qc_posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      if (data) {
+        setPosts(data.map(post => ({
+          ...post,
+          productLink: post.product_link,
+          userRatings: post.user_ratings || {}
+        })));
+      }
+    } catch (error: any) {
+      console.error('Error fetching posts:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת המידע",
+        description: "לא הצלחנו לטעון את הפוסטים מהשרת",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
-  const handleRatePost = (postId: string, rating: number) => {
+  const addNewPost = async (post: QCPostType) => {
+    try {
+      // Prepare data for insertion
+      const newPost = {
+        title: post.title,
+        description: post.description,
+        images: post.images,
+        product_link: post.productLink,
+        agent: post.agent,
+        rating: 0,
+        votes: 0
+      };
+      
+      const { data, error } = await supabase
+        .from('qc_posts')
+        .insert(newPost)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      // Add the new post to the state
+      if (data) {
+        setPosts([
+          {
+            ...data,
+            productLink: data.product_link,
+            userRatings: data.user_ratings || {}
+          },
+          ...posts
+        ]);
+      }
+      
+      setIsAddingPost(false);
+      
+      toast({
+        title: "הפוסט נוסף בהצלחה",
+        description: "תודה על השיתוף!",
+      });
+    } catch (error: any) {
+      console.error('Error adding post:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהוספת הפוסט",
+        description: error.message || "לא הצלחנו להוסיף את הפוסט",
+      });
+    }
+  };
+  
+  const handleRatePost = async (postId: string, rating: number) => {
     setPosts(posts.map(post => {
       if (post.id === postId) {
         // המתודה הזו היא פשוטה וזמנית. במערכת אמיתית עם התחברות,

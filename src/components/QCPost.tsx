@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Star, ExternalLink } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -6,18 +5,23 @@ import { format } from 'date-fns';
 import he from 'date-fns/locale/he';
 import { AgentInfo } from './AgentCard';
 import { agents } from '../pages/Index';
+import { supabase } from '../integrations/supabase/client';
+import { useToast } from '../hooks/use-toast';
 
 export interface QCPostType {
   id: string;
   title: string;
   description: string;
   images: string[];
-  productLink: string;
+  product_link?: string;
+  productLink?: string; // For backward compatibility
   agent: string;
-  timestamp: string;
+  timestamp?: string;
+  created_at?: string;
   rating: number;
   votes: number;
-  userRatings: Record<string, number>;
+  user_ratings?: Record<string, number>;
+  userRatings?: Record<string, number>; // For backward compatibility
 }
 
 interface QCPostProps {
@@ -29,9 +33,11 @@ const QCPost = ({ post, onRate }: QCPostProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [hasRated, setHasRated] = useState(false);
+  const { toast } = useToast();
   
-  // בדיקת סוג אתר מהקישור
+  // Badekit סוג אתר מהקישור
   const getProductSite = (url: string): string => {
+    if (!url) return 'אתר חיצוני';
     if (url.includes('taobao.com')) return 'Taobao';
     if (url.includes('weidian.com')) return 'Weidian';
     if (url.includes('1688.com')) return '1688';
@@ -40,10 +46,37 @@ const QCPost = ({ post, onRate }: QCPostProps) => {
     return 'אתר חיצוני';
   };
   
-  const handleRate = (rating: number) => {
+  // For backward compatibility
+  const productLink = post.product_link || post.productLink || '';
+  const userRatings = post.user_ratings || post.userRatings || {};
+  const timestamp = post.created_at || post.timestamp || new Date().toISOString();
+  
+  const handleRate = async (rating: number) => {
     if (!hasRated) {
-      onRate(rating);
-      setHasRated(true);
+      try {
+        // First call the passed onRate function for UI update
+        onRate(rating);
+        
+        // Then update the database if available
+        const { error } = await supabase
+          .from('qc_posts')
+          .update({
+            rating: ((post.rating * post.votes) + rating) / (post.votes + 1),
+            votes: post.votes + 1
+          })
+          .eq('id', post.id);
+          
+        if (error) throw error;
+        
+        setHasRated(true);
+      } catch (error: any) {
+        console.error('Error rating post:', error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בדירוג",
+          description: "לא הצלחנו לשמור את הדירוג שלך",
+        });
+      }
     }
   };
   
@@ -56,7 +89,7 @@ const QCPost = ({ post, onRate }: QCPostProps) => {
   };
   
   // הפוך את מחרוזת התאריך לאובייקט Date ואז לפורמט הדרוש עם תרגום לעברית
-  const formattedDate = format(new Date(post.timestamp), 'dd בMMMM yyyy', { locale: he });
+  const formattedDate = format(new Date(timestamp), 'dd בMMMM yyyy', { locale: he });
 
   // מצא את מידע הסוכן המתאים
   const agentInfo = agents.find(a => a.id === post.agent);
@@ -163,13 +196,13 @@ const QCPost = ({ post, onRate }: QCPostProps) => {
         {/* קישור למוצר */}
         <div className="flex justify-between items-center">
           <a
-            href={post.productLink}
+            href={productLink}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center text-primary text-sm hover:underline"
           >
             <ExternalLink size={14} className="ml-1" />
-            <span>קנה ב{getProductSite(post.productLink)}</span>
+            <span>קנה ב{getProductSite(productLink)}</span>
           </a>
           
           <span className="text-xs text-muted-foreground">{formattedDate}</span>
