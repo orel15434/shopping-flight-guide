@@ -59,7 +59,8 @@ const QCGallery = () => {
         product_link: post.productLink,
         agent: post.agent,
         rating: 0,
-        votes: 0
+        votes: 0,
+        user_ratings: {}
       };
       
       const { data, error } = await supabase

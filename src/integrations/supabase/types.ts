@@ -33,9 +33,11 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
-          image_url: string
+          images: string[]
+          product_link: string | null
           rating: number | null
           title: string
+          user_ratings: Json | null
           votes: number | null
         }
         Insert: {
@@ -43,9 +45,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          image_url: string
+          images?: string[]
+          product_link?: string | null
           rating?: number | null
           title: string
+          user_ratings?: Json | null
           votes?: number | null
         }
         Update: {
@@ -53,9 +57,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          image_url?: string
+          images?: string[]
+          product_link?: string | null
           rating?: number | null
           title?: string
+          user_ratings?: Json | null
           votes?: number | null
         }
         Relationships: []
