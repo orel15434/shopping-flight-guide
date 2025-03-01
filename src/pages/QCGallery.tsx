@@ -51,6 +51,8 @@ const QCGallery = () => {
   
   const addNewPost = async (post: QCPostType) => {
     try {
+      console.log('Adding new post:', post);
+      
       // Prepare data for insertion
       const newPost = {
         title: post.title,
@@ -63,13 +65,20 @@ const QCGallery = () => {
         user_ratings: {}
       };
       
+      console.log('Prepared post for insertion:', newPost);
+      
       const { data, error } = await supabase
         .from('qc_posts')
         .insert(newPost)
         .select()
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Post added successfully:', data);
       
       // Add the new post to the state
       if (data) {
@@ -205,7 +214,7 @@ const QCGallery = () => {
           )}
           
           {/* אם אין פוסטים */}
-          {filteredPosts.length === 0 && (
+          {filteredPosts.length === 0 && !loading && (
             <div className="text-center py-16 bg-secondary/20 rounded-xl mb-8">
               <div className="mb-4">
                 <Images size={48} className="mx-auto text-muted-foreground opacity-50" />
@@ -215,16 +224,26 @@ const QCGallery = () => {
             </div>
           )}
           
+          {/* טוען... */}
+          {loading && (
+            <div className="text-center py-16">
+              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">טוען תמונות QC...</p>
+            </div>
+          )}
+          
           {/* רשימת הפוסטים */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPosts.map(post => (
-              <QCPost 
-                key={post.id} 
-                post={post} 
-                onRate={(rating) => handleRatePost(post.id, rating)}
-              />
-            ))}
-          </div>
+          {!loading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPosts.map(post => (
+                <QCPost 
+                  key={post.id} 
+                  post={post} 
+                  onRate={(rating) => handleRatePost(post.id, rating)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </main>
       
