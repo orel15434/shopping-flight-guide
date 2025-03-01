@@ -57,7 +57,7 @@ const QCGallery = () => {
       const newPost = {
         title: post.title,
         description: post.description,
-        images: post.images,
+        images: post.images, // These are now Supabase Storage URLs
         product_link: post.productLink,
         agent: post.agent,
         rating: 0,
