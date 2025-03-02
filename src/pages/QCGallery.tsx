@@ -31,12 +31,21 @@ const QCGallery = () => {
       if (error) throw error;
       
       if (data) {
-        // Fixed type issue by properly casting user_ratings to Record<string, number>
-        setPosts(data.map(post => ({
-          ...post,
-          productLink: post.product_link,
-          userRatings: (post.user_ratings as Record<string, number>) || {}
-        })));
+        // Convert the database response to QCPostType format
+        const formattedPosts: QCPostType[] = data.map(post => ({
+          id: post.id,
+          title: post.title,
+          description: post.description || '',
+          images: post.images || [],
+          productLink: post.product_link || '',
+          agent: post.agent,
+          rating: post.rating || 0,
+          votes: post.votes || 0,
+          userRatings: (post.user_ratings as unknown as Record<string, number>) || {},
+          created_at: post.created_at
+        }));
+        
+        setPosts(formattedPosts);
       }
     } catch (error: any) {
       console.error('Error fetching posts:', error);
@@ -81,16 +90,22 @@ const QCGallery = () => {
       
       console.log('Post added successfully:', data);
       
-      // Add the new post to the state with proper type casting
+      // Add the new post to the state with proper type conversion
       if (data) {
-        setPosts([
-          {
-            ...data,
-            productLink: data.product_link,
-            userRatings: (data.user_ratings as Record<string, number>) || {}
-          },
-          ...posts
-        ]);
+        const formattedPost: QCPostType = {
+          id: data.id,
+          title: data.title,
+          description: data.description || '',
+          images: data.images || [],
+          productLink: data.product_link || '',
+          agent: data.agent,
+          rating: data.rating || 0,
+          votes: data.votes || 0,
+          userRatings: (data.user_ratings as unknown as Record<string, number>) || {},
+          created_at: data.created_at
+        };
+        
+        setPosts([formattedPost, ...posts]);
       }
       
       setIsAddingPost(false);
