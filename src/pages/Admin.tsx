@@ -28,6 +28,7 @@ const Admin = () => {
       
       if (session) {
         setIsAuthenticated(true);
+        console.log("User is authenticated:", session.user.email);
         
         // Check if the authenticated user is an admin
         const { data: adminData, error: adminError } = await supabase
@@ -37,10 +38,12 @@ const Admin = () => {
           .single();
           
         if (adminData && !adminError) {
+          console.log("User is admin:", adminData);
           setIsAdmin(true);
           // Load QC posts if admin
           fetchQCPosts();
         } else {
+          console.error("Admin check failed:", adminError);
           toast({
             variant: "destructive",
             title: "אין הרשאות",
@@ -72,48 +75,64 @@ const Admin = () => {
     setLoading(true);
     setLoginError('');
     
+    console.log("Attempting login with:", email, password);
+    
     try {
+      // First check if email exists in admin_users table
+      const { data: adminData, error: adminError } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .single();
+        
+      if (!adminData || adminError) {
+        setLoginError('אימייל לא מורשה למערכת הניהול');
+        toast({
+          variant: "destructive",
+          title: "אין הרשאות",
+          description: "אימייל לא מורשה למערכת הניהול",
+        });
+        setLoading(false);
+        return;
+      }
+      
+      console.log("Admin user found in admin_users table:", adminData);
+      
+      // Now attempt login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
       
       if (data.user) {
-        // Check if the user is an admin
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('email', data.user.email)
-          .single();
-          
-        if (adminData && !adminError) {
-          setIsAdmin(true);
-          setIsAuthenticated(true);
-          toast({
-            title: "התחברת בהצלחה",
-            description: "ברוך הבא למערכת הניהול",
-          });
-          fetchQCPosts();
-        } else {
-          // Logout user if not admin
-          await supabase.auth.signOut();
-          setIsAuthenticated(false);
-          setLoginError('אין לך הרשאות מנהל למערכת');
-          toast({
-            variant: "destructive",
-            title: "אין הרשאות",
-            description: "אין לך הרשאות גישה לעמוד זה",
-          });
-        }
+        console.log("Login successful:", data.user);
+        setIsAdmin(true);
+        setIsAuthenticated(true);
+        toast({
+          title: "התחברת בהצלחה",
+          description: "ברוך הבא למערכת הניהול",
+        });
+        fetchQCPosts();
       }
     } catch (error: any) {
-      setLoginError(error.message || "אירעה שגיאה בתהליך ההתחברות");
+      console.error("Authentication error:", error);
+      
+      let errorMessage = "אירעה שגיאה בתהליך ההתחברות";
+      
+      if (error.message === "Invalid login credentials") {
+        errorMessage = "שם משתמש או סיסמה שגויים";
+      }
+      
+      setLoginError(errorMessage);
       toast({
         variant: "destructive",
         title: "התחברות נכשלה",
-        description: error.message || "אירעה שגיאה בתהליך ההתחברות",
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
