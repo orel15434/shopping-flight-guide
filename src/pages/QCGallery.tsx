@@ -31,10 +31,11 @@ const QCGallery = () => {
       if (error) throw error;
       
       if (data) {
+        // Fixed type issue by properly casting user_ratings to Record<string, number>
         setPosts(data.map(post => ({
           ...post,
           productLink: post.product_link,
-          userRatings: post.user_ratings || {}
+          userRatings: (post.user_ratings as Record<string, number>) || {}
         })));
       }
     } catch (error: any) {
@@ -80,13 +81,13 @@ const QCGallery = () => {
       
       console.log('Post added successfully:', data);
       
-      // Add the new post to the state
+      // Add the new post to the state with proper type casting
       if (data) {
         setPosts([
           {
             ...data,
             productLink: data.product_link,
-            userRatings: data.user_ratings || {}
+            userRatings: (data.user_ratings as Record<string, number>) || {}
           },
           ...posts
         ]);

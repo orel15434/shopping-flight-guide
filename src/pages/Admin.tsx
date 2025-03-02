@@ -57,26 +57,48 @@ const Admin = () => {
     checkSession();
   }, [navigate, toast]);
   
-  // Initial check for admin user in the database
+  // Initial check for admin user in the database and create if not exists
   useEffect(() => {
     const checkAdminExists = async () => {
-      // Check if the admin user exists in the admin_users table
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('email', email)
-        .maybeSingle();
+      try {
+        // Check if the admin user exists in the admin_users table
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('email', email)
+          .maybeSingle();
+          
+        console.log("Admin check result:", data, error);
         
-      if (!data || error) {
-        console.error("Admin user not found in database:", error);
-        setLoginError('המשתמש לא קיים במערכת. אנא צור קשר עם מנהל המערכת');
-      } else {
-        console.log("Admin user found in database:", data);
+        if (!data) {
+          console.log("Admin user not found, creating...");
+          
+          // Insert the admin user
+          const { data: insertData, error: insertError } = await supabase
+            .from('admin_users')
+            .insert([{ email, id: crypto.randomUUID() }])
+            .select();
+            
+          if (insertError) {
+            console.error("Error creating admin user:", insertError);
+            setLoginError('שגיאה ביצירת משתמש מנהל. נסה שוב מאוחר יותר');
+          } else {
+            console.log("Admin user created successfully:", insertData);
+            toast({
+              title: "משתמש מנהל נוצר",
+              description: "המשתמש נוצר בהצלחה. אנא נסה להתחבר.",
+            });
+          }
+        } else {
+          console.log("Admin user found in database:", data);
+        }
+      } catch (error) {
+        console.error("Error checking admin user:", error);
       }
     };
     
     checkAdminExists();
-  }, [email]);
+  }, [email, toast]);
   
   const fetchQCPosts = async () => {
     const { data, error } = await supabase
@@ -148,7 +170,7 @@ const Admin = () => {
       let errorMessage = "אירעה שגיאה בתהליך ההתחברות";
       
       if (error.message === "Invalid login credentials") {
-        errorMessage = "שם משתמש או סיסמה שגויים";
+        errorMessage = "סיסמה שגויה, נסה שוב";
       }
       
       setLoginError(errorMessage);
