@@ -35,7 +35,7 @@ const Admin = () => {
           .from('admin_users')
           .select('*')
           .eq('email', session.user.email)
-          .single();
+          .maybeSingle();
           
         if (adminData && !adminError) {
           console.log("User is admin:", adminData);
@@ -56,6 +56,27 @@ const Admin = () => {
     
     checkSession();
   }, [navigate, toast]);
+  
+  // Initial check for admin user in the database
+  useEffect(() => {
+    const checkAdminExists = async () => {
+      // Check if the admin user exists in the admin_users table
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+        
+      if (!data || error) {
+        console.error("Admin user not found in database:", error);
+        setLoginError('המשתמש לא קיים במערכת. אנא צור קשר עם מנהל המערכת');
+      } else {
+        console.log("Admin user found in database:", data);
+      }
+    };
+    
+    checkAdminExists();
+  }, [email]);
   
   const fetchQCPosts = async () => {
     const { data, error } = await supabase
@@ -78,14 +99,16 @@ const Admin = () => {
     console.log("Attempting login with:", email, password);
     
     try {
-      // First check if email exists in admin_users table
+      // Skip the single() check that might fail and use maybeSingle() instead
       const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
         .select('*')
         .eq('email', email)
-        .single();
+        .maybeSingle();
         
-      if (!adminData || adminError) {
+      console.log("Admin check result:", adminData, adminError);
+        
+      if (!adminData) {
         setLoginError('אימייל לא מורשה למערכת הניהול');
         toast({
           variant: "destructive",
