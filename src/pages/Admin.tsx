@@ -7,15 +7,17 @@ import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useToast } from '../components/ui/use-toast';
-import { Trash2, Shield, LogOut } from 'lucide-react';
+import { Trash2, Shield, LogOut, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Admin = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@example.com');
+  const [password, setPassword] = useState('Admin123!');
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [qcPosts, setQcPosts] = useState<any[]>([]);
+  const [loginError, setLoginError] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -68,6 +70,7 @@ const Admin = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setLoginError('');
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -97,6 +100,7 @@ const Admin = () => {
           // Logout user if not admin
           await supabase.auth.signOut();
           setIsAuthenticated(false);
+          setLoginError('אין לך הרשאות מנהל למערכת');
           toast({
             variant: "destructive",
             title: "אין הרשאות",
@@ -105,6 +109,7 @@ const Admin = () => {
         }
       }
     } catch (error: any) {
+      setLoginError(error.message || "אירעה שגיאה בתהליך ההתחברות");
       toast({
         variant: "destructive",
         title: "התחברות נכשלה",
@@ -165,6 +170,21 @@ const Admin = () => {
                 <Shield className="h-6 w-6" />
                 כניסת מנהל
               </h1>
+              
+              <Alert className="mb-4 bg-blue-50 text-blue-800 border-blue-200">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  השתמש באימייל וסיסמה שהוזנו כברירת מחדל להתחברות
+                </AlertDescription>
+              </Alert>
+              
+              {loginError && (
+                <Alert className="mb-4 bg-red-50 text-red-800 border-red-200">
+                  <AlertDescription>
+                    {loginError}
+                  </AlertDescription>
+                </Alert>
+              )}
               
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
