@@ -7,7 +7,10 @@ import {
   adminLogin, 
   getAdminSession,
   adminLogout,
-  supabase
+  supabase,
+  deleteQCPost,
+  updateQCPost,
+  fetchQCPosts
 } from '../integrations/supabase/client';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -15,13 +18,15 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea'; 
 import { useToast } from '../hooks/use-toast';
-import { Trash2, Shield, LogOut, Info, Pencil, X, Image, Plus, Minus } from 'lucide-react';
+import { Trash2, Shield, LogOut, Info, Pencil, X, Image, Plus, Minus, Loader } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Admin = () => {
   const [email, setEmail] = useState(ADMIN_EMAIL);
   const [password, setPassword] = useState(ADMIN_PASSWORD);
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [qcPosts, setQcPosts] = useState<any[]>([]);
@@ -46,7 +51,7 @@ const Admin = () => {
           if (isAdmin && adminData) {
             console.log("User is admin:", adminData);
             setIsAdmin(true);
-            fetchQCPosts();
+            loadQCPosts();
           } else {
             console.error("Admin check failed:", error);
             toast({
@@ -65,22 +70,14 @@ const Admin = () => {
     checkSession();
   }, [navigate, toast]);
   
-  const fetchQCPosts = async () => {
+  const loadQCPosts = async () => {
     try {
       setLoading(true);
-      console.log("Fetching QC posts...");
-      
-      const { data, error } = await supabase
-        .from('qc_posts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await fetchQCPosts();
         
       if (error) {
-        console.error("Error fetching posts:", error);
         throw error;
       }
-      
-      console.log("Fetched posts:", data);
       
       if (data) {
         setQcPosts(data);
@@ -122,7 +119,7 @@ const Admin = () => {
             description: "ברוך הבא למערכת הניהול",
           });
           
-          fetchQCPosts();
+          loadQCPosts();
         }
       } else {
         setLoginError('פרטי ההתחברות שגויים');
@@ -150,42 +147,22 @@ const Admin = () => {
     
     if (confirmed) {
       try {
-        setLoading(true);
-        console.log("Deleting post with ID:", postId);
+        setDeletingId(postId);
         
-        const { data: existingPost, error: checkError } = await supabase
-          .from('qc_posts')
-          .select('id')
-          .eq('id', postId)
-          .single();
-          
-        if (checkError) {
-          console.error("Error checking post existence:", checkError);
-          throw new Error("Could not verify post existence");
-        }
-        
-        if (!existingPost) {
-          throw new Error("Post not found");
-        }
-        
-        const { error } = await supabase
-          .from('qc_posts')
-          .delete()
-          .eq('id', postId);
+        const { success, error } = await deleteQCPost(postId);
           
         if (error) {
-          console.error("Error deleting post:", error);
           throw error;
         }
         
-        console.log("Post deleted successfully");
-        
-        setQcPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
-        
-        toast({
-          title: "נמחק בהצלחה",
-          description: "הפוסט נמחק בהצלחה",
-        });
+        if (success) {
+          setQcPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+          
+          toast({
+            title: "נמחק בהצלחה",
+            description: "הפוסט נמחק בהצלחה",
+          });
+        }
       } catch (error: any) {
         console.error('Error with deletion:', error);
         toast({
@@ -194,7 +171,7 @@ const Admin = () => {
           description: error.message || "אירעה שגיאה בתהליך המחיקה",
         });
       } finally {
-        setLoading(false);
+        setDeletingId(null);
       }
     }
   };
@@ -230,23 +207,7 @@ const Admin = () => {
     }
     
     try {
-      setLoading(true);
-      console.log("Updating post with ID:", editingPost.id);
-      
-      const { data: existingPost, error: checkError } = await supabase
-        .from('qc_posts')
-        .select('id')
-        .eq('id', editingPost.id)
-        .single();
-        
-      if (checkError) {
-        console.error("Error checking post existence:", checkError);
-        throw new Error("Could not verify post existence");
-      }
-      
-      if (!existingPost) {
-        throw new Error("Post not found");
-      }
+      setUpdatingId(editingPost.id);
       
       const updateData = {
         title: editingPost.title,
@@ -256,37 +217,26 @@ const Admin = () => {
         images: imageUrls
       };
       
-      console.log("Update data:", updateData);
-      
-      const { error } = await supabase
-        .from('qc_posts')
-        .update(updateData)
-        .eq('id', editingPost.id);
+      const { data, error } = await updateQCPost(editingPost.id, updateData);
         
       if (error) {
-        console.error("Error updating post:", error);
         throw error;
       }
       
-      console.log("Post updated successfully");
-      
-      setQcPosts(prevPosts => 
-        prevPosts.map(post => 
-          post.id === editingPost.id ? {
-            ...post,
-            ...updateData
-          } : post
-        )
-      );
-      
-      toast({
-        title: "עודכן בהצלחה",
-        description: "הפוסט עודכן בהצלחה",
-      });
-      
-      handleCancelEdit();
-      
-      await fetchQCPosts();
+      if (data) {
+        setQcPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === editingPost.id ? data : post
+          )
+        );
+        
+        toast({
+          title: "עודכן בהצלחה",
+          description: "הפוסט עודכן בהצלחה",
+        });
+        
+        handleCancelEdit();
+      }
     } catch (error: any) {
       console.error('Error with update:', error);
       toast({
@@ -295,7 +245,7 @@ const Admin = () => {
         description: error.message || "אירעה שגיאה בתהליך העדכון",
       });
     } finally {
-      setLoading(false);
+      setUpdatingId(null);
     }
   };
 
@@ -506,9 +456,14 @@ const Admin = () => {
                   <Button variant="outline" onClick={handleCancelEdit}>ביטול</Button>
                   <Button 
                     onClick={handleUpdatePost}
-                    disabled={loading}
+                    disabled={updatingId === editingPost.id}
                   >
-                    {loading ? 'שומר...' : 'שמור שינויים'}
+                    {updatingId === editingPost.id ? (
+                      <>
+                        <Loader size={16} className="mr-2 animate-spin" />
+                        שומר...
+                      </>
+                    ) : 'שמור שינויים'}
                   </Button>
                 </div>
               </div>
@@ -552,6 +507,7 @@ const Admin = () => {
                               size="sm"
                               onClick={() => handleStartEdit(post)}
                               className="h-8 w-8 p-0"
+                              disabled={!!updatingId || !!deletingId}
                             >
                               <Pencil size={16} />
                             </Button>
@@ -560,9 +516,13 @@ const Admin = () => {
                               size="sm"
                               onClick={() => handleDeletePost(post.id)}
                               className="h-8 w-8 p-0"
-                              disabled={loading}
+                              disabled={!!updatingId || deletingId === post.id}
                             >
-                              <Trash2 size={16} />
+                              {deletingId === post.id ? (
+                                <Loader size={16} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={16} />
+                              )}
                             </Button>
                           </div>
                         </td>

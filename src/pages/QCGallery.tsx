@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, fetchQCPosts } from '../integrations/supabase/client';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import QCPost, { QCPostType } from '../components/QCPost';
@@ -17,16 +16,13 @@ const QCGallery = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    fetchPosts();
+    loadPosts();
   }, []);
   
-  const fetchPosts = async () => {
+  const loadPosts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('qc_posts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await fetchQCPosts();
         
       if (error) throw error;
       
