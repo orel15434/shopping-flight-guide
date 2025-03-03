@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -13,8 +12,9 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea'; 
 import { useToast } from '../hooks/use-toast';
-import { Trash2, Shield, LogOut, Info } from 'lucide-react';
+import { Trash2, Shield, LogOut, Info, Pencil, X } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { supabase } from '../integrations/supabase/client';
 
@@ -26,13 +26,13 @@ const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [qcPosts, setQcPosts] = useState<any[]>([]);
   const [loginError, setLoginError] = useState('');
+  const [editingPost, setEditingPost] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // בדיקת התחברות באמצעות הפונקציה החדשה
         const { data } = getAdminSession();
         
         if (data.session) {
@@ -82,7 +82,6 @@ const Admin = () => {
     setLoginError('');
     
     try {
-      // בדיקה שהפרטים נכונים כנגד הערכים הקבועים
       if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
         console.log("Credentials match, logging in as admin");
         
@@ -93,7 +92,6 @@ const Admin = () => {
         }
         
         if (data) {
-          // שמירה במצב המקומי ובלוקל סטורג'
           localStorage.setItem('admin_logged_in', 'true');
           setIsAuthenticated(true);
           setIsAdmin(true);
@@ -146,6 +144,52 @@ const Admin = () => {
           description: error.message || "אירעה שגיאה בתהליך המחיקה",
         });
       }
+    }
+  };
+
+  const handleStartEdit = (post: any) => {
+    setEditingPost({
+      id: post.id,
+      title: post.title,
+      description: post.description || '',
+      agent: post.agent,
+      product_link: post.product_link || ''
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPost(null);
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost) return;
+    
+    try {
+      const { error } = await supabase
+        .from('qc_posts')
+        .update({
+          title: editingPost.title,
+          description: editingPost.description,
+          agent: editingPost.agent,
+          product_link: editingPost.product_link
+        })
+        .eq('id', editingPost.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "עודכן בהצלחה",
+        description: "הפוסט עודכן בהצלחה",
+      });
+      
+      setEditingPost(null);
+      fetchQCPosts();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "עדכון נכשל",
+        description: error.message || "אירעה שגיאה בתהליך העדכון",
+      });
     }
   };
 
@@ -250,6 +294,68 @@ const Admin = () => {
             </Button>
           </div>
 
+          {editingPost && (
+            <div className="glass-card p-6 rounded-xl mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">עריכת פוסט</h2>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleCancelEdit}
+                >
+                  <X size={20} />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">כותרת</label>
+                  <Input 
+                    value={editingPost.title} 
+                    onChange={(e) => setEditingPost({...editingPost, title: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">תיאור</label>
+                  <Textarea 
+                    value={editingPost.description} 
+                    onChange={(e) => setEditingPost({...editingPost, description: e.target.value})}
+                    rows={3}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">סוכן</label>
+                  <select 
+                    className="w-full px-3 py-2 border rounded-md" 
+                    value={editingPost.agent}
+                    onChange={(e) => setEditingPost({...editingPost, agent: e.target.value})}
+                  >
+                    <option value="cssbuy">CSSBUY</option>
+                    <option value="ponybuy">PONYBUY</option>
+                    <option value="kakobuy">KAKOBUY</option>
+                    <option value="basetao">Basetao</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">קישור למוצר</label>
+                  <Input 
+                    value={editingPost.product_link || ''} 
+                    onChange={(e) => setEditingPost({...editingPost, product_link: e.target.value})}
+                    placeholder="הזן URL למוצר (אופציונלי)"
+                  />
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={handleCancelEdit}>ביטול</Button>
+                  <Button onClick={handleUpdatePost}>שמור שינויים</Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="glass-card p-6 rounded-xl">
             <h2 className="text-xl font-semibold mb-4">ניהול פוסטים בגלריית QC</h2>
             
@@ -277,13 +383,24 @@ const Admin = () => {
                           {new Date(post.created_at).toLocaleDateString('he-IL')}
                         </td>
                         <td className="py-3 px-4">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeletePost(post.id)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleStartEdit(post)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeletePost(post.id)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
