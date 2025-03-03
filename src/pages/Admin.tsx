@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, checkIsAdmin } from '../integrations/supabase/client';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
@@ -10,7 +10,7 @@ import { Trash2, Shield, LogOut, Info, UserPlus } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Admin = () => {
-  const [email, setEmail] = useState('valid.admin@example.com');
+  const [email, setEmail] = useState('orelgame156@gmail.com');
   const [password, setPassword] = useState('Admin123!');
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,76 +23,36 @@ const Admin = () => {
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        setIsAuthenticated(true);
-        console.log("User is authenticated:", session.user.email);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('email', session.user.email)
-          .maybeSingle();
+        if (session) {
+          setIsAuthenticated(true);
+          console.log("User is authenticated:", session.user.email);
           
-        if (adminData && !adminError) {
-          console.log("User is admin:", adminData);
-          setIsAdmin(true);
-          fetchQCPosts();
-        } else {
-          console.error("Admin check failed:", adminError);
-          toast({
-            variant: "destructive",
-            title: "אין הרשאות",
-            description: "אין לך הרשאות גישה לעמוד זה",
-          });
-          navigate('/');
+          const { isAdmin, adminData, error } = await checkIsAdmin(session.user.email || '');
+            
+          if (isAdmin && adminData) {
+            console.log("User is admin:", adminData);
+            setIsAdmin(true);
+            fetchQCPosts();
+          } else {
+            console.error("Admin check failed:", error);
+            toast({
+              variant: "destructive",
+              title: "אין הרשאות",
+              description: "אין לך הרשאות גישה לעמוד זה",
+            });
+            navigate('/');
+          }
         }
+      } catch (error) {
+        console.error("Error checking session:", error);
       }
     };
     
     checkSession();
   }, [navigate, toast]);
-  
-  useEffect(() => {
-    const checkAdminExists = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('email', email)
-          .maybeSingle();
-          
-        console.log("Admin check result:", data, error);
-        
-        if (!data) {
-          console.log("Admin user not found, creating...");
-          
-          const { data: insertData, error: insertError } = await supabase
-            .from('admin_users')
-            .insert([{ email, id: crypto.randomUUID() }])
-            .select();
-            
-          if (insertError) {
-            console.error("Error creating admin user:", insertError);
-            setLoginError('שגיאה ביצירת משתמש מנהל. נסה שוב מאוחר יותר');
-          } else {
-            console.log("Admin user created successfully:", insertData);
-            toast({
-              title: "משתמש מנהל נוצר",
-              description: "המשתמש נוצר בהצלחה. אנא נסה להתחבר.",
-            });
-          }
-        } else {
-          console.log("Admin user found in database:", data);
-        }
-      } catch (error) {
-        console.error("Error checking admin user:", error);
-      }
-    };
-    
-    checkAdminExists();
-  }, [email, toast]);
   
   const fetchQCPosts = async () => {
     const { data, error } = await supabase
@@ -115,26 +75,20 @@ const Admin = () => {
     console.log("Attempting login with:", email, password);
     
     try {
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('email', email)
-        .maybeSingle();
+      const { isAdmin, error: adminCheckError } = await checkIsAdmin(email);
         
-      console.log("Admin check result:", adminData, adminError);
-        
-      if (!adminData) {
+      if (!isAdmin) {
         setLoginError('אימייל לא מורשה למערכת הניהול');
         toast({
           variant: "destructive",
           title: "אין הרשאות",
-          description: "אימייל לא מורשה למערכת הניהול",
+          description: "יש להוסיף את המייל לרשימת המורשים לניהול במערכת",
         });
         setLoading(false);
         return;
       }
       
-      console.log("Admin user found in admin_users table:", adminData);
+      console.log("Admin user verified in admin_users table");
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -147,16 +101,13 @@ const Admin = () => {
         if (error.message.includes("Invalid login credentials")) {
           setLoginError('יוצר משתמש אוטומטית במערכת...');
           toast({
-            title: "יוצר משתמש אוטומatically",
+            title: "יוצר משתמש חדש",
             description: "מנסה ליצור משתמש חדש במערכת...",
           });
           
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
-            options: {
-              data: { is_admin: true }
-            }
           });
           
           if (signUpError) {
@@ -199,17 +150,12 @@ const Admin = () => {
           throw new Error("לא הצלחנו ליצור משתמש אוטומטית");
         }
         
-        if (!createUserMode) {
-          setLoginError('סיסמה שגויה, נסה שוב או צור משתמש חדש');
-          setCreateUserMode(true);
-          toast({
-            variant: "destructive",
-            title: "התחברות נכשלה",
-            description: "סיסמה שגויה, נסה שוב או צור משתמש חדש",
-          });
-        } else {
-          setLoginError(error.message);
-        }
+        setLoginError(error.message);
+        toast({
+          variant: "destructive",
+          title: "התחברות נכשלה",
+          description: error.message,
+        });
         
         throw error;
       }
@@ -239,15 +185,22 @@ const Admin = () => {
     console.log("Creating new admin user with:", email, password);
     
     try {
+      const { isAdmin, error: adminCheckError } = await checkIsAdmin(email);
+        
+      if (!isAdmin) {
+        setLoginError('אימייל לא מורשה למערכת הניהול');
+        toast({
+          variant: "destructive",
+          title: "אין הרשאות",
+          description: "יש להוסיף את המייל לרשימת המורשים לניהול במערכת",
+        });
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: window.location.origin + '/admin',
-          data: {
-            is_admin: true
-          }
-        }
       });
       
       if (error) {
@@ -354,7 +307,7 @@ const Admin = () => {
               <Alert className="mb-4 bg-blue-50 text-blue-800 border-blue-200">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  השתמש באימייל וסיסמה שהוזנו כברירת מחדל להתחברות
+                  השתמש באימייל orelgame156@gmail.com ובסיסמה שתבחר להתחברות
                 </AlertDescription>
               </Alert>
               
@@ -404,17 +357,15 @@ const Admin = () => {
                     {loading ? 'מתחבר...' : 'התחבר'}
                   </Button>
 
-                  {(loginError.includes('סיסמה שגויה') || loginError.includes('משתמש לא קיים')) && (
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      className="w-full flex items-center gap-2 mt-2" 
-                      onClick={() => setCreateUserMode(true)}
-                    >
-                      <UserPlus size={16} />
-                      יצירת משתמש חדש
-                    </Button>
-                  )}
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="w-full flex items-center gap-2 mt-2" 
+                    onClick={() => setCreateUserMode(true)}
+                  >
+                    <UserPlus size={16} />
+                    יצירת משתמש חדש
+                  </Button>
                 </form>
               ) : (
                 <form onSubmit={handleCreateUser} className="space-y-4">

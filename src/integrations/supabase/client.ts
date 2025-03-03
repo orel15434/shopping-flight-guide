@@ -6,3 +6,19 @@ const supabaseUrl = 'https://szpbqcvzuksaqrtihbea.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6cGJxY3Z6dWtzYXFydGloYmVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA4NDkzODYsImV4cCI6MjA1NjQyNTM4Nn0.xgZsANt3xKvkKke1aHJXMSfZvzXOQ53Xsl_iWBs5DGs';
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+
+// Helper function to check if a user is an admin
+export const checkIsAdmin = async (email: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+      
+    return { isAdmin: !!data, error, adminData: data };
+  } catch (error) {
+    console.error("Error checking admin status:", error);
+    return { isAdmin: false, error, adminData: null };
+  }
+};
