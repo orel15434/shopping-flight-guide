@@ -76,6 +76,7 @@ const Admin = () => {
         .order('created_at', { ascending: false });
         
       if (error) {
+        console.error("Fetch error details:", error);
         throw error;
       }
       
@@ -159,15 +160,16 @@ const Admin = () => {
         
         console.log("Post deleted successfully");
         
+        setQcPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+        
         toast({
           title: "נמחק בהצלחה",
           description: "הפוסט נמחק בהצלחה",
         });
         
-        // Update the local state to reflect the deletion
-        setQcPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+        await fetchQCPosts();
       } catch (error: any) {
-        console.error('Delete error:', error);
+        console.error('Delete error details:', error);
         toast({
           variant: "destructive",
           title: "מחיקה נכשלה",
@@ -222,7 +224,7 @@ const Admin = () => {
         .select();
         
       if (error) {
-        console.error("Update error:", error);
+        console.error("Update error details:", error);
         throw error;
       }
       
@@ -233,7 +235,6 @@ const Admin = () => {
         description: "הפוסט עודכן בהצלחה",
       });
       
-      // Update the post in the local state
       setQcPosts(prevPosts => 
         prevPosts.map(post => 
           post.id === editingPost.id ? {
@@ -248,9 +249,10 @@ const Admin = () => {
       );
       
       handleCancelEdit();
-      fetchQCPosts(); // Refresh posts to ensure we have the latest data
+      
+      await fetchQCPosts();
     } catch (error: any) {
-      console.error('Update error:', error);
+      console.error('Update error details:', error);
       toast({
         variant: "destructive",
         title: "עדכון נכשל",
