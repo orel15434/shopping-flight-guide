@@ -41,7 +41,11 @@ const QCGallery = () => {
           agent: post.agent,
           rating: post.rating || 0,
           votes: post.votes || 0,
-          userRatings: (post.user_ratings as unknown as Record<string, number>) || {},
+          userRatings: post.user_ratings ? 
+            (typeof post.user_ratings === 'object' ? 
+              post.user_ratings as Record<string, number> : 
+              {}
+            ) : {},
           created_at: post.created_at
         }));
         
@@ -101,7 +105,11 @@ const QCGallery = () => {
           agent: data.agent,
           rating: data.rating || 0,
           votes: data.votes || 0,
-          userRatings: (data.user_ratings as unknown as Record<string, number>) || {},
+          userRatings: data.user_ratings ? 
+            (typeof data.user_ratings === 'object' ? 
+              data.user_ratings as Record<string, number> : 
+              {}
+            ) : {},
           created_at: data.created_at
         };
         
