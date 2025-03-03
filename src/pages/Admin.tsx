@@ -154,34 +154,34 @@ const Admin = () => {
         setDeletingId(postId);
         console.log("Starting deletion process for post ID:", postId);
         
-        // נבצע קודם מחיקה זמנית מהממשק כדי לשפר את חווית המשתמש
+        const originalPost = qcPosts.find(post => post.id === postId);
+        
         const optimisticPosts = qcPosts.filter(post => post.id !== postId);
         setQcPosts(optimisticPosts);
         
-        // קריאה לפונקציית המחיקה 
         const { success, error } = await deleteQCPost(postId);
           
         if (error) {
           console.error("Deletion response returned an error:", error);
           
-          // במקרה של כישלון נחזיר את הפוסט למצב הקודם
-          const { data } = await fetchQCPosts();
-          if (data) {
-            setQcPosts(data);
+          if (originalPost) {
+            setQcPosts(prev => [...prev, originalPost]);
+          } else {
+            await loadQCPosts();
           }
           
           throw error;
         }
         
         if (success) {
-          console.log("Deletion successful, updating UI");
-          // כבר ביצענו מחיקה אופטימית מהממשק, אבל נטען מחדש את הנתונים כדי לוודא סנכרון
-          await loadQCPosts();
+          console.log("Deletion successful");
           
           toast({
             title: "נמחק בהצלחה",
             description: "הפוסט נמחק בהצלחה ממסד הנתונים",
           });
+          
+          await loadQCPosts();
         } else {
           throw new Error("Delete operation failed without specific error");
         }
@@ -193,7 +193,6 @@ const Admin = () => {
           description: error.message || "אירעה שגיאה בתהליך המחיקה",
         });
         
-        // רענון הנתונים מהשרת למקרה שהיו שינויים
         await loadQCPosts();
       } finally {
         setDeletingId(null);
@@ -235,6 +234,8 @@ const Admin = () => {
       setUpdatingId(editingPost.id);
       console.log("Starting update process for post ID:", editingPost.id);
       
+      const originalPosts = [...qcPosts];
+      
       const updateData = {
         title: editingPost.title,
         description: editingPost.description,
@@ -243,33 +244,33 @@ const Admin = () => {
         images: imageUrls
       };
       
-      // קריאה לפונקציית העדכון
+      setQcPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === editingPost.id ? {...post, ...updateData} : post
+        )
+      );
+      
       const { data, error } = await updateQCPost(editingPost.id, updateData);
         
       if (error) {
         console.error("Update response returned an error:", error);
+        setQcPosts(originalPosts);
         throw error;
       }
       
       if (data) {
         console.log("Update successful, updating UI with:", data);
-        // עדכון ה-state רק לאחר עדכון מוצלח במסד
-        setQcPosts(prevPosts => 
-          prevPosts.map(post => 
-            post.id === editingPost.id ? data : post
-          )
-        );
-        
-        // וידוא שהפוסט באמת התעדכן דרך בדיקת הנתונים מהשרת
-        await loadQCPosts();
         
         toast({
           title: "עודכן בהצלחה",
           description: "הפוסט עודכן בהצלחה במסד הנתונים",
         });
         
+        await loadQCPosts();
+        
         handleCancelEdit();
       } else {
+        setQcPosts(originalPosts);
         throw new Error("Update operation returned no data");
       }
     } catch (error: any) {
@@ -279,6 +280,8 @@ const Admin = () => {
         title: "עדכון נכשל",
         description: error.message || "אירעה שגיאה בתהליך העדכון",
       });
+      
+      await loadQCPosts();
     } finally {
       setUpdatingId(null);
     }

@@ -85,6 +85,23 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
+    // וידוא שהפוסט קיים לפני שמנסים למחוק אותו
+    const { data: existingPost, error: checkError } = await supabase
+      .from('qc_posts')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error(`Error checking if post ${postId} exists:`, checkError);
+      throw checkError;
+    }
+    
+    if (!existingPost) {
+      console.error(`Post with ID ${postId} does not exist`);
+      throw new Error('Post does not exist');
+    }
+    
     // מבצע את המחיקה
     const { error } = await supabase
       .from('qc_posts')
@@ -96,21 +113,27 @@ export const deleteQCPost = async (postId: string) => {
       throw error;
     }
     
-    // וידוא שהפעולה הצליחה
-    console.log(`Successfully deleted post with ID: ${postId}`);
+    // המתנה קצרה לתת לשרת להתעדכן
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // בדיקה שהפוסט באמת נמחק - מאוד חשוב להשתמש ב-maybeSingle במקום single
-    // כדי שלא תהיה שגיאה כאשר הפוסט לא נמצא (וזה מה שאנחנו רוצים)
-    const { data: checkData } = await supabase
+    // בדיקה שהפוסט באמת נמחק
+    const { data: checkData, error: verifyError } = await supabase
       .from('qc_posts')
       .select('id')
-      .eq('id', postId);
+      .eq('id', postId)
+      .maybeSingle();
       
-    if (checkData && checkData.length > 0) {
-      console.error(`Post ${postId} still exists after delete operation`);
-      throw new Error('Post was not deleted successfully');
+    if (verifyError && !verifyError.message.includes('No rows found')) {
+      console.error(`Error verifying deletion of post ${postId}:`, verifyError);
+      throw verifyError;
     }
     
+    if (checkData) {
+      console.error(`Post ${postId} still exists after delete operation`);
+      throw new Error('Post was not deleted successfully - it still exists in the database');
+    }
+    
+    console.log(`Successfully deleted post with ID: ${postId}`);
     return { success: true, error: null };
   } catch (error) {
     console.error(`Error deleting post ${postId}:`, error);
@@ -131,7 +154,24 @@ export const updateQCPost = async (postId: string, updateData: any) => {
       throw new Error('Invalid update data provided');
     }
     
-    // חשוב שהעדכון יחזיר את הנתונים המעודכנים
+    // וידוא שהפוסט קיים לפני שמנסים לעדכן אותו
+    const { data: existingPost, error: checkError } = await supabase
+      .from('qc_posts')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error(`Error checking if post ${postId} exists:`, checkError);
+      throw checkError;
+    }
+    
+    if (!existingPost) {
+      console.error(`Post with ID ${postId} does not exist`);
+      throw new Error('Post does not exist');
+    }
+    
+    // ביצוע העדכון
     const { data, error } = await supabase
       .from('qc_posts')
       .update(updateData)
@@ -148,8 +188,28 @@ export const updateQCPost = async (postId: string, updateData: any) => {
       throw new Error(`No post found with ID: ${postId}`);
     }
     
-    console.log(`Successfully updated post with ID: ${postId}`, data[0]);
-    return { data: data[0], error: null };
+    // המתנה קצרה לתת לשרת להתעדכן
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // וידוא שהעדכון נשמר
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('qc_posts')
+      .select('*')
+      .eq('id', postId)
+      .maybeSingle();
+      
+    if (verifyError) {
+      console.error(`Error verifying update of post ${postId}:`, verifyError);
+      throw verifyError;
+    }
+    
+    if (!verifyData) {
+      console.error(`Updated post ${postId} cannot be retrieved`);
+      throw new Error('Post update could not be verified');
+    }
+    
+    console.log(`Successfully updated post with ID: ${postId}`, verifyData);
+    return { data: verifyData, error: null };
   } catch (error) {
     console.error(`Error updating post ${postId}:`, error);
     return { data: null, error };
