@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useToast } from '../components/ui/use-toast';
-import { Trash2, Shield, LogOut, Info } from 'lucide-react';
+import { Trash2, Shield, LogOut, Info, UserPlus } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Admin = () => {
@@ -18,6 +18,7 @@ const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [qcPosts, setQcPosts] = useState<any[]>([]);
   const [loginError, setLoginError] = useState('');
+  const [createUserMode, setCreateUserMode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -151,6 +152,15 @@ const Admin = () => {
       
       if (error) {
         console.error("Login error:", error);
+        
+        // If the error is about invalid credentials and we're not in create user mode,
+        // suggest to create the user
+        if (error.message.includes("Invalid login credentials") && !createUserMode) {
+          setLoginError('משתמש לא קיים במערכת. האם ליצור משתמש חדש?');
+          setCreateUserMode(true);
+          throw error;
+        }
+        
         throw error;
       }
       
@@ -173,10 +183,63 @@ const Admin = () => {
         errorMessage = "סיסמה שגויה, נסה שוב";
       }
       
+      if (!createUserMode) {
+        setLoginError(errorMessage);
+        toast({
+          variant: "destructive",
+          title: "התחברות נכשלה",
+          description: errorMessage,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setLoginError('');
+    
+    console.log("Creating new admin user with:", email, password);
+    
+    try {
+      // Create the user
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + '/admin'
+        }
+      });
+      
+      if (error) {
+        console.error("User creation error:", error);
+        throw error;
+      }
+      
+      if (data.user) {
+        console.log("User created successfully:", data.user);
+        toast({
+          title: "משתמש נוצר בהצלחה",
+          description: "כעת ניתן להתחבר עם המשתמש החדש",
+        });
+        setCreateUserMode(false);
+      }
+    } catch (error: any) {
+      console.error("User creation error:", error);
+      
+      let errorMessage = "אירעה שגיאה ביצירת המשתמש";
+      
+      if (error.message.includes("already registered")) {
+        errorMessage = "המייל כבר רשום במערכת - נסה להתחבר";
+        setCreateUserMode(false);
+      }
+      
       setLoginError(errorMessage);
       toast({
         variant: "destructive",
-        title: "התחברות נכשלה",
+        title: "יצירת משתמש נכשלה",
         description: errorMessage,
       });
     } finally {
@@ -250,43 +313,105 @@ const Admin = () => {
                 </Alert>
               )}
               
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-1">
-                    אימייל
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="הזן אימייל"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium mb-1">
-                    סיסמה
-                  </label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="הזן סיסמה"
-                    required
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loading}
-                >
-                  {loading ? 'מתחבר...' : 'התחבר'}
-                </Button>
-              </form>
+              {!createUserMode ? (
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium mb-1">
+                      אימייל
+                    </label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="הזן אימייל"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium mb-1">
+                      סיסמה
+                    </label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="הזן סיסמה"
+                      required
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={loading}
+                  >
+                    {loading ? 'מתחבר...' : 'התחבר'}
+                  </Button>
+
+                  {loginError.includes('משתמש לא קיים') && (
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      className="w-full flex items-center gap-2 mt-2" 
+                      onClick={() => setCreateUserMode(true)}
+                    >
+                      <UserPlus size={16} />
+                      יצירת משתמש חדש
+                    </Button>
+                  )}
+                </form>
+              ) : (
+                <form onSubmit={handleCreateUser} className="space-y-4">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium mb-1">
+                      אימייל
+                    </label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="הזן אימייל"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium mb-1">
+                      סיסמה
+                    </label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="הזן סיסמה"
+                      required
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full flex items-center gap-2" 
+                    disabled={loading}
+                  >
+                    <UserPlus size={16} />
+                    {loading ? 'יוצר משתמש...' : 'צור משתמש חדש'}
+                  </Button>
+                  
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    className="w-full" 
+                    onClick={() => setCreateUserMode(false)}
+                  >
+                    חזרה להתחברות
+                  </Button>
+                </form>
+              )}
             </div>
           </div>
         </main>
