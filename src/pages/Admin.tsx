@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, checkIsAdmin } from '../integrations/supabase/client';
@@ -6,7 +7,7 @@ import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useToast } from '../hooks/use-toast';
-import { Trash2, Shield, LogOut, Info, UserPlus } from 'lucide-react';
+import { Trash2, Shield, LogOut, Info, UserPlus, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Admin = () => {
@@ -17,6 +18,7 @@ const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [qcPosts, setQcPosts] = useState<any[]>([]);
   const [loginError, setLoginError] = useState('');
+  const [signupDisabled, setSignupDisabled] = useState(false);
   const [createUserMode, setCreateUserMode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -71,6 +73,7 @@ const Admin = () => {
     e.preventDefault();
     setLoading(true);
     setLoginError('');
+    setSignupDisabled(false);
     
     console.log("Attempting login with:", email, password);
     
@@ -99,63 +102,74 @@ const Admin = () => {
         console.error("Login error:", error);
         
         if (error.message.includes("Invalid login credentials")) {
-          setLoginError('יוצר משתמש אוטומטית במערכת...');
-          toast({
-            title: "יוצר משתמש חדש",
-            description: "מנסה ליצור משתמש חדש במערכת...",
-          });
-          
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-          });
-          
-          if (signUpError) {
-            console.error("Auto user creation error:", signUpError);
-            setLoginError(`שגיאה ביצירת המשתמש: ${signUpError.message}`);
-            throw signUpError;
-          }
-          
-          if (signUpData.user) {
-            console.log("User created automatically:", signUpData.user);
-            toast({
-              title: "משתמש נוצר בהצלחה",
-              description: "המשתמש נוצר אוטומטית, מנסה להתחבר...",
-            });
-            
-            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          // Try to sign up, but now we handle the case where signups are disabled
+          try {
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
               email,
-              password
+              password,
             });
             
-            if (loginError) {
-              console.error("Login after auto-creation error:", loginError);
-              throw loginError;
+            if (signUpError) {
+              console.error("Auto user creation error:", signUpError);
+              
+              if (signUpError.message.includes("Signups not allowed")) {
+                setSignupDisabled(true);
+                setLoginError('הרשמה חדשה אינה מופעלת בפרויקט הנוכחי. יש לפנות למנהל המערכת.');
+                toast({
+                  variant: "destructive",
+                  title: "הרשמה חדשה אינה מופעלת",
+                  description: "יש להפעיל הרשמה בהגדרות Supabase או להשתמש במשתמש קיים",
+                });
+              } else {
+                setLoginError(`שגיאה ביצירת המשתמש: ${signUpError.message}`);
+              }
+              throw signUpError;
             }
             
-            if (loginData.user) {
-              console.log("Login successful after auto-creation:", loginData.user);
-              setIsAdmin(true);
-              setIsAuthenticated(true);
+            if (signUpData.user) {
+              console.log("User created automatically:", signUpData.user);
               toast({
-                title: "התחברת בהצלחה",
-                description: "ברוך הבא למערכת הניהול",
+                title: "משתמש נוצר בהצלחה",
+                description: "המשתמש נוצר אוטומטית, מנסה להתחבר...",
               });
-              fetchQCPosts();
-              setLoading(false);
-              return;
+              
+              const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+                email,
+                password
+              });
+              
+              if (loginError) {
+                console.error("Login after auto-creation error:", loginError);
+                throw loginError;
+              }
+              
+              if (loginData.user) {
+                console.log("Login successful after auto-creation:", loginData.user);
+                setIsAdmin(true);
+                setIsAuthenticated(true);
+                toast({
+                  title: "התחברת בהצלחה",
+                  description: "ברוך הבא למערכת הניהול",
+                });
+                fetchQCPosts();
+                setLoading(false);
+                return;
+              }
             }
+          } catch (signupError: any) {
+            console.error("Authentication error during signup:", signupError);
           }
-          
-          throw new Error("לא הצלחנו ליצור משתמש אוטומטית");
         }
         
-        setLoginError(error.message);
-        toast({
-          variant: "destructive",
-          title: "התחברות נכשלה",
-          description: error.message,
-        });
+        // If we get here, both login and signup failed
+        if (!signupDisabled) {
+          setLoginError(error.message);
+          toast({
+            variant: "destructive",
+            title: "התחברות נכשלה",
+            description: error.message,
+          });
+        }
         
         throw error;
       }
@@ -181,6 +195,7 @@ const Admin = () => {
     e.preventDefault();
     setLoading(true);
     setLoginError('');
+    setSignupDisabled(false);
     
     console.log("Creating new admin user with:", email, password);
     
@@ -205,6 +220,23 @@ const Admin = () => {
       
       if (error) {
         console.error("User creation error:", error);
+        
+        if (error.message.includes("Signups not allowed")) {
+          setSignupDisabled(true);
+          setLoginError('הרשמה חדשה אינה מופעלת בפרויקט הנוכחי. יש לפנות למנהל המערכת.');
+          toast({
+            variant: "destructive",
+            title: "הרשמה חדשה אינה מופעלת",
+            description: "יש להפעיל הרשמה בהגדרות Supabase או להשתמש במשתמש קיים",
+          });
+        } else {
+          setLoginError(`שגיאה ביצירת המשתמש: ${error.message}`);
+          toast({
+            variant: "destructive",
+            title: "יצירת משתמש נכשלה",
+            description: error.message,
+          });
+        }
         throw error;
       }
       
@@ -244,12 +276,14 @@ const Admin = () => {
         setCreateUserMode(false);
       }
       
-      setLoginError(errorMessage);
-      toast({
-        variant: "destructive",
-        title: "יצירת משתמש נכשלה",
-        description: errorMessage,
-      });
+      if (!signupDisabled) {
+        setLoginError(errorMessage);
+        toast({
+          variant: "destructive",
+          title: "יצירת משתמש נכשלה",
+          description: errorMessage,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -307,7 +341,7 @@ const Admin = () => {
               <Alert className="mb-4 bg-blue-50 text-blue-800 border-blue-200">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  השתמש באימייל orelgame156@gmail.com ובסיסמה שתבחר להתחברות
+                  השתמש באימייל {email} ובסיסמה שתבחר להתחברות
                 </AlertDescription>
               </Alert>
               
@@ -315,6 +349,26 @@ const Admin = () => {
                 <Alert className="mb-4 bg-red-50 text-red-800 border-red-200">
                   <AlertDescription>
                     {loginError}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {signupDisabled && (
+                <Alert className="mb-4 bg-yellow-50 text-yellow-800 border-yellow-200">
+                  <AlertDescription className="space-y-2">
+                    <p>יש להפעיל הרשמה בהגדרות Supabase:</p>
+                    <p className="flex items-center gap-1 text-sm">
+                      <span>1. לכנס ל-Supabase Dashboard</span>
+                      <a href="https://supabase.com/dashboard/project/szpbqcvzuksaqrtihbea/auth/providers" 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="flex items-center gap-1 text-blue-600 hover:underline">
+                        <ExternalLink size={14} />
+                        <span>קישור</span>
+                      </a>
+                    </p>
+                    <p>2. לבחור Authentication &gt; Providers</p>
+                    <p>3. להפעיל את Email ולכבות את "Confirm email"</p>
                   </AlertDescription>
                 </Alert>
               )}
