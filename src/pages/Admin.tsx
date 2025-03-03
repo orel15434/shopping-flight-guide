@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
@@ -11,7 +10,7 @@ import { Trash2, Shield, LogOut, Info, UserPlus } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Admin = () => {
-  const [email, setEmail] = useState('admin@example.com');
+  const [email, setEmail] = useState('valid.admin@example.com');
   const [password, setPassword] = useState('Admin123!');
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,7 +21,6 @@ const Admin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Check if user is logged in and if they are an admin
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -31,7 +29,6 @@ const Admin = () => {
         setIsAuthenticated(true);
         console.log("User is authenticated:", session.user.email);
         
-        // Check if the authenticated user is an admin
         const { data: adminData, error: adminError } = await supabase
           .from('admin_users')
           .select('*')
@@ -41,7 +38,6 @@ const Admin = () => {
         if (adminData && !adminError) {
           console.log("User is admin:", adminData);
           setIsAdmin(true);
-          // Load QC posts if admin
           fetchQCPosts();
         } else {
           console.error("Admin check failed:", adminError);
@@ -58,11 +54,9 @@ const Admin = () => {
     checkSession();
   }, [navigate, toast]);
   
-  // Initial check for admin user in the database
   useEffect(() => {
     const checkAdminExists = async () => {
       try {
-        // Check if the admin user exists in the admin_users table
         const { data, error } = await supabase
           .from('admin_users')
           .select('*')
@@ -74,7 +68,6 @@ const Admin = () => {
         if (!data) {
           console.log("Admin user not found, creating...");
           
-          // Insert the admin user
           const { data: insertData, error: insertError } = await supabase
             .from('admin_users')
             .insert([{ email, id: crypto.randomUUID() }])
@@ -122,7 +115,6 @@ const Admin = () => {
     console.log("Attempting login with:", email, password);
     
     try {
-      // First, check if the user exists in the admin_users table
       const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
         .select('*')
@@ -144,7 +136,6 @@ const Admin = () => {
       
       console.log("Admin user found in admin_users table:", adminData);
       
-      // Now attempt login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -153,16 +144,13 @@ const Admin = () => {
       if (error) {
         console.error("Login error:", error);
         
-        // If the error is about invalid credentials, check if we need to create the user
         if (error.message.includes("Invalid login credentials")) {
-          // Show loading state for creating user
           setLoginError('יוצר משתמש אוטומטית במערכת...');
           toast({
-            title: "יוצר משתמש אוטומטית",
+            title: "יוצר משתמש אוטומatically",
             description: "מנסה ליצור משתמש חדש במערכת...",
           });
           
-          // Try to create the user automatically
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
@@ -184,7 +172,6 @@ const Admin = () => {
               description: "המשתמש נוצר אוטומטית, מנסה להתחבר...",
             });
             
-            // Try logging in again
             const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
               email,
               password
@@ -252,7 +239,6 @@ const Admin = () => {
     console.log("Creating new admin user with:", email, password);
     
     try {
-      // Create the user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -277,7 +263,6 @@ const Admin = () => {
         });
         setCreateUserMode(false);
         
-        // Try to sign in immediately
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -334,7 +319,6 @@ const Admin = () => {
           description: "הפוסט נמחק בהצלחה",
         });
         
-        // Refresh post list
         fetchQCPosts();
       } catch (error: any) {
         toast({
@@ -355,7 +339,6 @@ const Admin = () => {
     });
   };
 
-  // Render login form if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background">
@@ -490,7 +473,6 @@ const Admin = () => {
     );
   }
 
-  // Render admin dashboard if authenticated and admin
   return (
     <div className="min-h-screen bg-background">
       <Header />
