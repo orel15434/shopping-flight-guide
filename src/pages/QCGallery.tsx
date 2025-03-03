@@ -1,19 +1,22 @@
+
 import { useState, useEffect } from 'react';
-import { supabase, fetchQCPosts } from '../integrations/supabase/client';
+import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import QCPost, { QCPostType } from '../components/QCPost';
 import AddQCPostForm from '../components/AddQCPostForm';
 import { Button } from '../components/ui/button';
-import { PlusCircle, X, Images } from 'lucide-react';
+import { PlusCircle, X, Images, Trash2 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { toast } from 'sonner';
 
 const QCGallery = () => {
   const [posts, setPosts] = useState<QCPostType[]>([]);
   const [isAddingPost, setIsAddingPost] = useState(false);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const { toast: useToastHook } = useToast();
   
   useEffect(() => {
     loadPosts();
@@ -46,16 +49,62 @@ const QCGallery = () => {
         }));
         
         setPosts(formattedPosts);
+        console.log("Setting posts in state:", formattedPosts.length, "posts");
       }
     } catch (error: any) {
       console.error('Error fetching posts:', error);
       toast({
-        variant: "destructive",
         title: "שגיאה בטעינת המידע",
         description: "לא הצלחנו לטעון את הפוסטים מהשרת",
       });
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const handleDeletePost = async (postId: string) => {
+    if (!postId || deleting) return;
+    
+    setDeleting(postId);
+    console.log("Starting deletion process for post ID:", postId);
+    
+    // Optimistic update - remove post from UI immediately
+    const previousPosts = [...posts];
+    setPosts(posts.filter(post => post.id !== postId));
+    
+    try {
+      // Attempt to delete the post from the database
+      const { success, error } = await deleteQCPost(postId);
+      
+      if (!success) {
+        throw error || new Error("Failed to delete post");
+      }
+      
+      // Success message
+      toast({
+        title: "נמחק בהצלחה",
+        description: "הפוסט נמחק בהצלחה",
+      });
+      
+      // Reload posts to ensure UI is in sync with database
+      await loadPosts();
+      
+    } catch (error: any) {
+      console.error("Deletion error:", error);
+      
+      // Restore the previous state if deletion failed
+      setPosts(previousPosts);
+      
+      // Show error message
+      toast({
+        title: "מחיקה נכשלה",
+        description: error.message || "הפוסט לא נמחק בהצלחה",
+      });
+      
+      // Reload posts to ensure UI is in sync with database
+      await loadPosts();
+    } finally {
+      setDeleting(null);
     }
   };
   
@@ -121,7 +170,6 @@ const QCGallery = () => {
     } catch (error: any) {
       console.error('Error adding post:', error);
       toast({
-        variant: "destructive",
         title: "שגיאה בהוספת הפוסט",
         description: error.message || "לא הצלחנו להוסיף את הפוסט",
       });
@@ -260,6 +308,8 @@ const QCGallery = () => {
                   key={post.id} 
                   post={post} 
                   onRate={(rating) => handleRatePost(post.id, rating)}
+                  onDelete={handleDeletePost}
+                  showDeleteButton={true}
                 />
               ))}
             </div>

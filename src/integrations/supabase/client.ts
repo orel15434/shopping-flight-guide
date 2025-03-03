@@ -85,22 +85,38 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // Skip unnecessary existence check for performance
-    
-    // מבצע את המחיקה - עם תצורת RPC לוודא ביצוע מלא
-    const { error } = await supabase
+    // Directly execute a DELETE operation
+    const { error: deleteError } = await supabase
       .from('qc_posts')
       .delete()
       .eq('id', postId);
       
-    if (error) {
-      console.error(`Database error when deleting post ${postId}:`, error);
-      throw error;
+    if (deleteError) {
+      console.error(`Database error when deleting post ${postId}:`, deleteError);
+      throw deleteError;
+    }
+    
+    // Force a small delay to allow database to complete the operation
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Verify if the post was actually deleted
+    const { data: checkData, error: checkError } = await supabase
+      .from('qc_posts')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error(`Error verifying deletion for post ${postId}:`, checkError);
+    }
+    
+    // If post still exists after deletion, throw an error
+    if (checkData && checkData.id) {
+      console.error(`Post ${postId} still exists after deletion attempt`);
+      throw new Error('Post was not deleted successfully - it still exists in the database');
     }
     
     console.log(`Successfully deleted post with ID: ${postId}`);
-    
-    // נחזיר הצלחה מיידית ללא בדיקה נוספת שיכולה להכשל
     return { success: true, error: null };
   } catch (error) {
     console.error(`Error deleting post ${postId}:`, error);
