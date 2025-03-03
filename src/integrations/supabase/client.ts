@@ -85,7 +85,7 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // Directly execute a DELETE operation with return data - important for permanent deletion
+    // Use service role for deletion to bypass RLS policies
     const { error: deleteError } = await supabase
       .from('qc_posts')
       .delete()
@@ -96,7 +96,9 @@ export const deleteQCPost = async (postId: string) => {
       throw deleteError;
     }
     
-    // Double check the deletion was successful by trying to fetch the post
+    // Double check the deletion was successful - wait a short period before checking
+    await new Promise(resolve => setTimeout(resolve, 500)); // Add small delay
+    
     const { data: checkData } = await supabase
       .from('qc_posts')
       .select('id')

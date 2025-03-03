@@ -170,6 +170,8 @@ const Admin = () => {
             description: "הפוסט נמחק בהצלחה ממסד הנתונים",
           });
         } else {
+          // Roll back to original state if there was an error
+          setQcPosts(originalPosts);
           throw new Error("Delete operation failed without specific error");
         }
       } catch (error: any) {
@@ -177,7 +179,7 @@ const Admin = () => {
         toast.error(`מחיקה נכשלה: ${error.message || "אירעה שגיאה בתהליך המחיקה"}`);
       } finally {
         setDeletingId(null);
-        // Reload data from server to ensure our UI is in sync with database state
+        // Always reload data from server to ensure our UI is in sync with database state
         await loadQCPosts();
       }
     }
