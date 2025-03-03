@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -155,24 +154,28 @@ const Admin = () => {
         setDeletingId(postId);
         console.log("Starting deletion process for post ID:", postId);
         
+        // נבצע קודם מחיקה זמנית מהממשק כדי לשפר את חווית המשתמש
+        const optimisticPosts = qcPosts.filter(post => post.id !== postId);
+        setQcPosts(optimisticPosts);
+        
         // קריאה לפונקציית המחיקה 
         const { success, error } = await deleteQCPost(postId);
           
         if (error) {
           console.error("Deletion response returned an error:", error);
+          
+          // במקרה של כישלון נחזיר את הפוסט למצב הקודם
+          const { data } = await fetchQCPosts();
+          if (data) {
+            setQcPosts(data);
+          }
+          
           throw error;
         }
         
         if (success) {
           console.log("Deletion successful, updating UI");
-          // עדכון ה-state רק לאחר מחיקה מוצלחת מהמסד
-          setQcPosts(prevPosts => {
-            const filteredPosts = prevPosts.filter(post => post.id !== postId);
-            console.log("Posts after filtering:", filteredPosts.length);
-            return filteredPosts;
-          });
-          
-          // וידוא שהפוסט באמת נמחק דרך בדיקת הנתונים מהשרת
+          // כבר ביצענו מחיקה אופטימית מהממשק, אבל נטען מחדש את הנתונים כדי לוודא סנכרון
           await loadQCPosts();
           
           toast({
@@ -189,6 +192,9 @@ const Admin = () => {
           title: "מחיקה נכשלה",
           description: error.message || "אירעה שגיאה בתהליך המחיקה",
         });
+        
+        // רענון הנתונים מהשרת למקרה שהיו שינויים
+        await loadQCPosts();
       } finally {
         setDeletingId(null);
       }

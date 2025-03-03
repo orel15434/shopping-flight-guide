@@ -85,7 +85,7 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // מבצע את המחיקה - חשוב להשתמש בdelete עם single ולא reselect
+    // מבצע את המחיקה
     const { error } = await supabase
       .from('qc_posts')
       .delete()
@@ -99,14 +99,14 @@ export const deleteQCPost = async (postId: string) => {
     // וידוא שהפעולה הצליחה
     console.log(`Successfully deleted post with ID: ${postId}`);
     
-    // בדיקה שהפוסט באמת נמחק
+    // בדיקה שהפוסט באמת נמחק - מאוד חשוב להשתמש ב-maybeSingle במקום single
+    // כדי שלא תהיה שגיאה כאשר הפוסט לא נמצא (וזה מה שאנחנו רוצים)
     const { data: checkData } = await supabase
       .from('qc_posts')
       .select('id')
-      .eq('id', postId)
-      .single();
+      .eq('id', postId);
       
-    if (checkData) {
+    if (checkData && checkData.length > 0) {
       console.error(`Post ${postId} still exists after delete operation`);
       throw new Error('Post was not deleted successfully');
     }
