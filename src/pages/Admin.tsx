@@ -76,7 +76,7 @@ const Admin = () => {
         .order('created_at', { ascending: false });
         
       if (error) {
-        console.error("Fetch error details:", error);
+        console.error("Error fetching posts:", error);
         throw error;
       }
       
@@ -141,6 +141,11 @@ const Admin = () => {
   };
 
   const handleDeletePost = async (postId: string) => {
+    if (!postId) {
+      console.error("Invalid post ID for deletion");
+      return;
+    }
+    
     const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק פוסט זה?");
     
     if (confirmed) {
@@ -148,13 +153,28 @@ const Admin = () => {
         setLoading(true);
         console.log("Deleting post with ID:", postId);
         
+        const { data: existingPost, error: checkError } = await supabase
+          .from('qc_posts')
+          .select('id')
+          .eq('id', postId)
+          .single();
+          
+        if (checkError) {
+          console.error("Error checking post existence:", checkError);
+          throw new Error("Could not verify post existence");
+        }
+        
+        if (!existingPost) {
+          throw new Error("Post not found");
+        }
+        
         const { error } = await supabase
           .from('qc_posts')
           .delete()
           .eq('id', postId);
           
         if (error) {
-          console.error("Delete error:", error);
+          console.error("Error deleting post:", error);
           throw error;
         }
         
@@ -166,10 +186,8 @@ const Admin = () => {
           title: "נמחק בהצלחה",
           description: "הפוסט נמחק בהצלחה",
         });
-        
-        await fetchQCPosts();
       } catch (error: any) {
-        console.error('Delete error details:', error);
+        console.error('Error with deletion:', error);
         toast({
           variant: "destructive",
           title: "מחיקה נכשלה",
@@ -182,6 +200,12 @@ const Admin = () => {
   };
 
   const handleStartEdit = (post: any) => {
+    if (!post || !post.id) {
+      console.error("Invalid post for editing");
+      return;
+    }
+    
+    console.log("Starting edit for post:", post.id);
     setEditingPost({
       id: post.id,
       title: post.title,
@@ -200,12 +224,29 @@ const Admin = () => {
   };
 
   const handleUpdatePost = async () => {
-    if (!editingPost) return;
+    if (!editingPost || !editingPost.id) {
+      console.error("No post selected for update or invalid post ID");
+      return;
+    }
     
     try {
       setLoading(true);
-      console.log("Updating post:", editingPost);
-      console.log("With images:", imageUrls);
+      console.log("Updating post with ID:", editingPost.id);
+      
+      const { data: existingPost, error: checkError } = await supabase
+        .from('qc_posts')
+        .select('id')
+        .eq('id', editingPost.id)
+        .single();
+        
+      if (checkError) {
+        console.error("Error checking post existence:", checkError);
+        throw new Error("Could not verify post existence");
+      }
+      
+      if (!existingPost) {
+        throw new Error("Post not found");
+      }
       
       const updateData = {
         title: editingPost.title,
@@ -217,42 +258,37 @@ const Admin = () => {
       
       console.log("Update data:", updateData);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('qc_posts')
         .update(updateData)
-        .eq('id', editingPost.id)
-        .select();
+        .eq('id', editingPost.id);
         
       if (error) {
-        console.error("Update error details:", error);
+        console.error("Error updating post:", error);
         throw error;
       }
       
-      console.log("Post updated successfully:", data);
+      console.log("Post updated successfully");
+      
+      setQcPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === editingPost.id ? {
+            ...post,
+            ...updateData
+          } : post
+        )
+      );
       
       toast({
         title: "עודכן בהצלחה",
         description: "הפוסט עודכן בהצלחה",
       });
       
-      setQcPosts(prevPosts => 
-        prevPosts.map(post => 
-          post.id === editingPost.id ? {
-            ...post,
-            title: editingPost.title,
-            description: editingPost.description,
-            agent: editingPost.agent,
-            product_link: editingPost.product_link,
-            images: imageUrls
-          } : post
-        )
-      );
-      
       handleCancelEdit();
       
       await fetchQCPosts();
     } catch (error: any) {
-      console.error('Update error details:', error);
+      console.error('Error with update:', error);
       toast({
         variant: "destructive",
         title: "עדכון נכשל",
@@ -482,7 +518,9 @@ const Admin = () => {
           <div className="glass-card p-6 rounded-xl">
             <h2 className="text-xl font-semibold mb-4">ניהול פוסטים בגלריית QC</h2>
             
-            {qcPosts.length === 0 ? (
+            {loading && <p className="text-center py-4">טוען...</p>}
+            
+            {!loading && qcPosts.length === 0 ? (
               <p className="text-center py-8 text-muted-foreground">לא נמצאו פוסטים</p>
             ) : (
               <div className="overflow-x-auto">
@@ -522,6 +560,7 @@ const Admin = () => {
                               size="sm"
                               onClick={() => handleDeletePost(post.id)}
                               className="h-8 w-8 p-0"
+                              disabled={loading}
                             >
                               <Trash2 size={16} />
                             </Button>
