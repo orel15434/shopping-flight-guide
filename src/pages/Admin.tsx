@@ -5,7 +5,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { useToast } from '../components/ui/use-toast';
+import { useToast } from '../hooks/use-toast';
 import { Trash2, Shield, LogOut, Info, UserPlus } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
