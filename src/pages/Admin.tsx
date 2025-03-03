@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -7,7 +6,8 @@ import {
   checkIsAdmin, 
   adminLogin, 
   getAdminSession,
-  adminLogout 
+  adminLogout,
+  supabase
 } from '../integrations/supabase/client';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -17,7 +17,6 @@ import { Textarea } from '../components/ui/textarea';
 import { useToast } from '../hooks/use-toast';
 import { Trash2, Shield, LogOut, Info, Pencil, X, Image, Plus, Minus } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { supabase } from '../integrations/supabase/client';
 
 const Admin = () => {
   const [email, setEmail] = useState(ADMIN_EMAIL);
@@ -67,15 +66,33 @@ const Admin = () => {
   }, [navigate, toast]);
   
   const fetchQCPosts = async () => {
-    const { data, error } = await supabase
-      .from('qc_posts')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      setLoading(true);
+      console.log("Fetching QC posts...");
       
-    if (data && !error) {
-      setQcPosts(data);
-    } else {
+      const { data, error } = await supabase
+        .from('qc_posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
+      
+      console.log("Fetched posts:", data);
+      
+      if (data) {
+        setQcPosts(data);
+      }
+    } catch (error: any) {
       console.error('Error fetching posts:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת הפוסטים",
+        description: error.message || "אירעה שגיאה בטעינת הפוסטים",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -128,12 +145,19 @@ const Admin = () => {
     if (confirmed) {
       try {
         setLoading(true);
+        console.log("Deleting post with ID:", postId);
+        
         const { error } = await supabase
           .from('qc_posts')
           .delete()
           .eq('id', postId);
           
-        if (error) throw error;
+        if (error) {
+          console.error("Delete error:", error);
+          throw error;
+        }
+        
+        console.log("Post deleted successfully");
         
         toast({
           title: "נמחק בהצלחה",
@@ -181,18 +205,28 @@ const Admin = () => {
       console.log("Updating post:", editingPost);
       console.log("With images:", imageUrls);
       
-      const { error } = await supabase
+      const updateData = {
+        title: editingPost.title,
+        description: editingPost.description,
+        agent: editingPost.agent,
+        product_link: editingPost.product_link,
+        images: imageUrls
+      };
+      
+      console.log("Update data:", updateData);
+      
+      const { data, error } = await supabase
         .from('qc_posts')
-        .update({
-          title: editingPost.title,
-          description: editingPost.description,
-          agent: editingPost.agent,
-          product_link: editingPost.product_link,
-          images: imageUrls
-        })
-        .eq('id', editingPost.id);
+        .update(updateData)
+        .eq('id', editingPost.id)
+        .select();
         
-      if (error) throw error;
+      if (error) {
+        console.error("Update error:", error);
+        throw error;
+      }
+      
+      console.log("Post updated successfully:", data);
       
       toast({
         title: "עודכן בהצלחה",
