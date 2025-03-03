@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -18,6 +19,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea'; 
 import { useToast } from '../hooks/use-toast';
+import { toast } from 'sonner';
 import { Trash2, Shield, LogOut, Info, Pencil, X, Image, Plus, Minus, Loader } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
@@ -34,7 +36,7 @@ const Admin = () => {
   const [editingPost, setEditingPost] = useState<any>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,11 +56,7 @@ const Admin = () => {
             loadQCPosts();
           } else {
             console.error("Admin check failed:", error);
-            toast({
-              variant: "destructive",
-              title: "אין הרשאות",
-              description: "אין לך הרשאות גישה לעמוד זה",
-            });
+            toast.error("אין לך הרשאות גישה לעמוד זה");
             navigate('/');
           }
         }
@@ -68,7 +66,7 @@ const Admin = () => {
     };
     
     checkSession();
-  }, [navigate, toast]);
+  }, [navigate]);
   
   const loadQCPosts = async () => {
     try {
@@ -88,11 +86,7 @@ const Admin = () => {
       }
     } catch (error: any) {
       console.error('Error fetching posts:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בטעינת הפוסטים",
-        description: error.message || "אירעה שגיאה בטעינת הפוסטים",
-      });
+      toast.error(`שגיאה בטעינת הפוסטים: ${error.message || "אירעה שגיאה לא ידועה"}`);
     } finally {
       setLoading(false);
     }
@@ -118,8 +112,7 @@ const Admin = () => {
           setIsAuthenticated(true);
           setIsAdmin(true);
           
-          toast({
-            title: "התחברת בהצלחה",
+          toast.success("התחברת בהצלחה", {
             description: "ברוך הבא למערכת הניהול",
           });
           
@@ -127,9 +120,7 @@ const Admin = () => {
         }
       } else {
         setLoginError('פרטי ההתחברות שגויים');
-        toast({
-          variant: "destructive",
-          title: "התחברות נכשלה",
+        toast.error("התחברות נכשלה", {
           description: "פרטי ההתחברות שגויים",
         });
       }
@@ -154,21 +145,20 @@ const Admin = () => {
         setDeletingId(postId);
         console.log("Starting deletion process for post ID:", postId);
         
-        const originalPost = qcPosts.find(post => post.id === postId);
+        // Save the original post state for rollback if needed
+        const originalPosts = [...qcPosts];
         
-        const optimisticPosts = qcPosts.filter(post => post.id !== postId);
-        setQcPosts(optimisticPosts);
+        // Optimistic UI update - remove post from UI immediately
+        setQcPosts(qcPosts.filter(post => post.id !== postId));
         
+        // Attempt to delete from database
         const { success, error } = await deleteQCPost(postId);
           
         if (error) {
           console.error("Deletion response returned an error:", error);
           
-          if (originalPost) {
-            setQcPosts(prev => [...prev, originalPost]);
-          } else {
-            await loadQCPosts();
-          }
+          // Roll back to original state if there was an error
+          setQcPosts(originalPosts);
           
           throw error;
         }
@@ -176,26 +166,19 @@ const Admin = () => {
         if (success) {
           console.log("Deletion successful");
           
-          toast({
-            title: "נמחק בהצלחה",
+          toast.success("נמחק בהצלחה", {
             description: "הפוסט נמחק בהצלחה ממסד הנתונים",
           });
-          
-          await loadQCPosts();
         } else {
           throw new Error("Delete operation failed without specific error");
         }
       } catch (error: any) {
         console.error('Error with deletion:', error);
-        toast({
-          variant: "destructive",
-          title: "מחיקה נכשלה",
-          description: error.message || "אירעה שגיאה בתהליך המחיקה",
-        });
-        
-        await loadQCPosts();
+        toast.error(`מחיקה נכשלה: ${error.message || "אירעה שגיאה בתהליך המחיקה"}`);
       } finally {
         setDeletingId(null);
+        // Reload data from server to ensure our UI is in sync with database state
+        await loadQCPosts();
       }
     }
   };
@@ -234,6 +217,7 @@ const Admin = () => {
       setUpdatingId(editingPost.id);
       console.log("Starting update process for post ID:", editingPost.id);
       
+      // Save original post state for rollback if needed
       const originalPosts = [...qcPosts];
       
       const updateData = {
@@ -244,6 +228,7 @@ const Admin = () => {
         images: imageUrls
       };
       
+      // Optimistic UI update
       setQcPosts(prevPosts => 
         prevPosts.map(post => 
           post.id === editingPost.id ? {...post, ...updateData} : post
@@ -254,36 +239,33 @@ const Admin = () => {
         
       if (error) {
         console.error("Update response returned an error:", error);
+        
+        // Roll back to original state if there was an error
         setQcPosts(originalPosts);
+        
         throw error;
       }
       
       if (data) {
-        console.log("Update successful, updating UI with:", data);
+        console.log("Update successful, updated data:", data);
         
-        toast({
-          title: "עודכן בהצלחה",
+        toast.success("עודכן בהצלחה", {
           description: "הפוסט עודכן בהצלחה במסד הנתונים",
         });
         
-        await loadQCPosts();
-        
         handleCancelEdit();
       } else {
+        // Roll back if no data returned
         setQcPosts(originalPosts);
         throw new Error("Update operation returned no data");
       }
     } catch (error: any) {
       console.error('Error with update:', error);
-      toast({
-        variant: "destructive",
-        title: "עדכון נכשל",
-        description: error.message || "אירעה שגיאה בתהליך העדכון",
-      });
-      
-      await loadQCPosts();
+      toast.error(`עדכון נכשל: ${error.message || "אירעה שגיאה בתהליך העדכון"}`);
     } finally {
       setUpdatingId(null);
+      // Reload data from server to ensure our UI is in sync with database state
+      await loadQCPosts();
     }
   };
 
@@ -304,9 +286,7 @@ const Admin = () => {
     await adminLogout();
     setIsAuthenticated(false);
     setIsAdmin(false);
-    toast({
-      title: "התנתקת בהצלחה",
-    });
+    toast.success("התנתקת בהצלחה");
   };
 
   if (!isAuthenticated) {
