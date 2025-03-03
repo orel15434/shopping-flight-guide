@@ -1,12 +1,13 @@
+
 import { useState } from 'react';
-import { Star, ExternalLink } from 'lucide-react';
+import { Star, ExternalLink, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import he from 'date-fns/locale/he';
-import { AgentInfo } from './AgentCard';
 import { agents } from '../pages/Index';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from '../hooks/use-toast';
+import { Button } from './ui/button';
 
 export interface QCPostType {
   id: string;
@@ -27,9 +28,11 @@ export interface QCPostType {
 interface QCPostProps {
   post: QCPostType;
   onRate: (rating: number) => void;
+  onDelete?: (postId: string) => void;
+  showDeleteButton?: boolean;
 }
 
-const QCPost = ({ post, onRate }: QCPostProps) => {
+const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [hasRated, setHasRated] = useState(false);
@@ -95,7 +98,19 @@ const QCPost = ({ post, onRate }: QCPostProps) => {
   const agentInfo = agents.find(a => a.id === post.agent);
   
   return (
-    <div className="glass-card rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="glass-card rounded-xl overflow-hidden hover:shadow-lg transition-shadow relative">
+      {/* Delete button if shown */}
+      {showDeleteButton && onDelete && (
+        <Button
+          variant="destructive"
+          size="icon"
+          className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full"
+          onClick={() => onDelete(post.id)}
+        >
+          <Trash2 size={16} />
+        </Button>
+      )}
+      
       {/* גלריית תמונות */}
       <div className="relative aspect-[4/3] bg-secondary/20 overflow-hidden">
         {post.images.length > 0 ? (

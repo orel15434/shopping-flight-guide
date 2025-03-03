@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -8,7 +7,6 @@ import AddQCPostForm from '../components/AddQCPostForm';
 import { Button } from '../components/ui/button';
 import { PlusCircle, X, Images, Trash2 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
-import { toast } from 'sonner';
 
 const QCGallery = () => {
   const [posts, setPosts] = useState<QCPostType[]>([]);
@@ -16,7 +14,7 @@ const QCGallery = () => {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const { toast: useToastHook } = useToast();
+  const { toast } = useToast();
   
   useEffect(() => {
     loadPosts();
@@ -54,8 +52,8 @@ const QCGallery = () => {
     } catch (error: any) {
       console.error('Error fetching posts:', error);
       toast({
-        title: "שגיאה בטעינת המידע",
         description: "לא הצלחנו לטעון את הפוסטים מהשרת",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -82,8 +80,8 @@ const QCGallery = () => {
       
       // Success message
       toast({
-        title: "נמחק בהצלחה",
         description: "הפוסט נמחק בהצלחה",
+        variant: "default",
       });
       
       // Reload posts to ensure UI is in sync with database
@@ -97,8 +95,8 @@ const QCGallery = () => {
       
       // Show error message
       toast({
-        title: "מחיקה נכשלה",
         description: error.message || "הפוסט לא נמחק בהצלחה",
+        variant: "destructive",
       });
       
       // Reload posts to ensure UI is in sync with database
@@ -164,14 +162,14 @@ const QCGallery = () => {
       setIsAddingPost(false);
       
       toast({
-        title: "הפוסט נוסף בהצלחה",
         description: "תודה על השיתוף!",
+        variant: "default",
       });
     } catch (error: any) {
       console.error('Error adding post:', error);
       toast({
-        title: "שגיאה בהוספת הפוסט",
         description: error.message || "לא הצלחנו להוסיף את הפוסט",
+        variant: "destructive",
       });
     }
   };
