@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -14,7 +15,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea'; 
 import { useToast } from '../hooks/use-toast';
-import { Trash2, Shield, LogOut, Info, Pencil, X } from 'lucide-react';
+import { Trash2, Shield, LogOut, Info, Pencil, X, Image, Plus, Minus } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { supabase } from '../integrations/supabase/client';
 
@@ -27,6 +28,8 @@ const Admin = () => {
   const [qcPosts, setQcPosts] = useState<any[]>([]);
   const [loginError, setLoginError] = useState('');
   const [editingPost, setEditingPost] = useState<any>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -124,6 +127,7 @@ const Admin = () => {
     
     if (confirmed) {
       try {
+        setLoading(true);
         const { error } = await supabase
           .from('qc_posts')
           .delete()
@@ -136,13 +140,17 @@ const Admin = () => {
           description: "הפוסט נמחק בהצלחה",
         });
         
-        fetchQCPosts();
+        // Update the local state to reflect the deletion
+        setQcPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
       } catch (error: any) {
+        console.error('Delete error:', error);
         toast({
           variant: "destructive",
           title: "מחיקה נכשלה",
           description: error.message || "אירעה שגיאה בתהליך המחיקה",
         });
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -153,25 +161,34 @@ const Admin = () => {
       title: post.title,
       description: post.description || '',
       agent: post.agent,
-      product_link: post.product_link || ''
+      product_link: post.product_link || '',
+      images: post.images || []
     });
+    setImageUrls(post.images || []);
   };
 
   const handleCancelEdit = () => {
     setEditingPost(null);
+    setImageUrls([]);
+    setNewImageUrl('');
   };
 
   const handleUpdatePost = async () => {
     if (!editingPost) return;
     
     try {
+      setLoading(true);
+      console.log("Updating post:", editingPost);
+      console.log("With images:", imageUrls);
+      
       const { error } = await supabase
         .from('qc_posts')
         .update({
           title: editingPost.title,
           description: editingPost.description,
           agent: editingPost.agent,
-          product_link: editingPost.product_link
+          product_link: editingPost.product_link,
+          images: imageUrls
         })
         .eq('id', editingPost.id);
         
@@ -182,15 +199,45 @@ const Admin = () => {
         description: "הפוסט עודכן בהצלחה",
       });
       
-      setEditingPost(null);
-      fetchQCPosts();
+      // Update the post in the local state
+      setQcPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === editingPost.id ? {
+            ...post,
+            title: editingPost.title,
+            description: editingPost.description,
+            agent: editingPost.agent,
+            product_link: editingPost.product_link,
+            images: imageUrls
+          } : post
+        )
+      );
+      
+      handleCancelEdit();
+      fetchQCPosts(); // Refresh posts to ensure we have the latest data
     } catch (error: any) {
+      console.error('Update error:', error);
       toast({
         variant: "destructive",
         title: "עדכון נכשל",
         description: error.message || "אירעה שגיאה בתהליך העדכון",
       });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleAddImage = () => {
+    if (newImageUrl && !imageUrls.includes(newImageUrl)) {
+      setImageUrls([...imageUrls, newImageUrl]);
+      setNewImageUrl('');
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    const updatedImages = [...imageUrls];
+    updatedImages.splice(index, 1);
+    setImageUrls(updatedImages);
   };
 
   const handleLogout = async () => {
@@ -348,9 +395,49 @@ const Admin = () => {
                   />
                 </div>
                 
+                <div>
+                  <label className="block text-sm font-medium mb-1">תמונות</label>
+                  <div className="space-y-2 mb-4">
+                    {imageUrls.map((url, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input value={url} readOnly />
+                        <Button 
+                          variant="destructive" 
+                          size="icon"
+                          onClick={() => handleRemoveImage(index)}
+                        >
+                          <Minus size={16} />
+                        </Button>
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                          <Image size={20} className="text-blue-500" />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={newImageUrl} 
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      placeholder="הזן URL לתמונה חדשה"
+                    />
+                    <Button 
+                      onClick={handleAddImage}
+                      className="flex items-center gap-1"
+                    >
+                      <Plus size={16} />
+                      הוסף
+                    </Button>
+                  </div>
+                </div>
+                
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" onClick={handleCancelEdit}>ביטול</Button>
-                  <Button onClick={handleUpdatePost}>שמור שינויים</Button>
+                  <Button 
+                    onClick={handleUpdatePost}
+                    disabled={loading}
+                  >
+                    {loading ? 'שומר...' : 'שמור שינויים'}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -369,6 +456,7 @@ const Admin = () => {
                       <th className="py-2 px-4 text-right">כותרת</th>
                       <th className="py-2 px-4 text-right">סוכן</th>
                       <th className="py-2 px-4 text-right">דירוג</th>
+                      <th className="py-2 px-4 text-right">תמונות</th>
                       <th className="py-2 px-4 text-right">תאריך</th>
                       <th className="py-2 px-4 text-right">פעולות</th>
                     </tr>
@@ -378,7 +466,8 @@ const Admin = () => {
                       <tr key={post.id} className="border-b hover:bg-secondary/10">
                         <td className="py-3 px-4">{post.title}</td>
                         <td className="py-3 px-4">{post.agent}</td>
-                        <td className="py-3 px-4">{post.rating.toFixed(1)} ({post.votes})</td>
+                        <td className="py-3 px-4">{post.rating?.toFixed(1) || '0.0'} ({post.votes || 0})</td>
+                        <td className="py-3 px-4">{post.images?.length || 0}</td>
                         <td className="py-3 px-4">
                           {new Date(post.created_at).toLocaleDateString('he-IL')}
                         </td>
