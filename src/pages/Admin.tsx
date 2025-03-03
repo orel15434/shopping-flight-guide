@@ -58,7 +58,7 @@ const Admin = () => {
     checkSession();
   }, [navigate, toast]);
   
-  // Initial check for admin user in the database and create if not exists
+  // Initial check for admin user in the database
   useEffect(() => {
     const checkAdminExists = async () => {
       try {
@@ -122,7 +122,7 @@ const Admin = () => {
     console.log("Attempting login with:", email, password);
     
     try {
-      // Skip the single() check that might fail and use maybeSingle() instead
+      // First, check if the user exists in the admin_users table
       const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
         .select('*')
@@ -153,12 +153,75 @@ const Admin = () => {
       if (error) {
         console.error("Login error:", error);
         
-        // If the error is about invalid credentials and we're not in create user mode,
-        // suggest to create the user
-        if (error.message.includes("Invalid login credentials") && !createUserMode) {
-          setLoginError('משתמש לא קיים במערכת. האם ליצור משתמש חדש?');
+        // If the error is about invalid credentials, check if we need to create the user
+        if (error.message.includes("Invalid login credentials")) {
+          // Show loading state for creating user
+          setLoginError('יוצר משתמש אוטומטית במערכת...');
+          toast({
+            title: "יוצר משתמש אוטומטית",
+            description: "מנסה ליצור משתמש חדש במערכת...",
+          });
+          
+          // Try to create the user automatically
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { is_admin: true }
+            }
+          });
+          
+          if (signUpError) {
+            console.error("Auto user creation error:", signUpError);
+            setLoginError(`שגיאה ביצירת המשתמש: ${signUpError.message}`);
+            throw signUpError;
+          }
+          
+          if (signUpData.user) {
+            console.log("User created automatically:", signUpData.user);
+            toast({
+              title: "משתמש נוצר בהצלחה",
+              description: "המשתמש נוצר אוטומטית, מנסה להתחבר...",
+            });
+            
+            // Try logging in again
+            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+            
+            if (loginError) {
+              console.error("Login after auto-creation error:", loginError);
+              throw loginError;
+            }
+            
+            if (loginData.user) {
+              console.log("Login successful after auto-creation:", loginData.user);
+              setIsAdmin(true);
+              setIsAuthenticated(true);
+              toast({
+                title: "התחברת בהצלחה",
+                description: "ברוך הבא למערכת הניהול",
+              });
+              fetchQCPosts();
+              setLoading(false);
+              return;
+            }
+          }
+          
+          throw new Error("לא הצלחנו ליצור משתמש אוטומטית");
+        }
+        
+        if (!createUserMode) {
+          setLoginError('סיסמה שגויה, נסה שוב או צור משתמש חדש');
           setCreateUserMode(true);
-          throw error;
+          toast({
+            variant: "destructive",
+            title: "התחברות נכשלה",
+            description: "סיסמה שגויה, נסה שוב או צור משתמש חדש",
+          });
+        } else {
+          setLoginError(error.message);
         }
         
         throw error;
@@ -176,21 +239,6 @@ const Admin = () => {
       }
     } catch (error: any) {
       console.error("Authentication error:", error);
-      
-      let errorMessage = "אירעה שגיאה בתהליך ההתחברות";
-      
-      if (error.message === "Invalid login credentials") {
-        errorMessage = "סיסמה שגויה, נסה שוב";
-      }
-      
-      if (!createUserMode) {
-        setLoginError(errorMessage);
-        toast({
-          variant: "destructive",
-          title: "התחברות נכשלה",
-          description: errorMessage,
-        });
-      }
     } finally {
       setLoading(false);
     }
@@ -209,7 +257,10 @@ const Admin = () => {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin + '/admin'
+          emailRedirectTo: window.location.origin + '/admin',
+          data: {
+            is_admin: true
+          }
         }
       });
       
@@ -225,6 +276,25 @@ const Admin = () => {
           description: "כעת ניתן להתחבר עם המשתמש החדש",
         });
         setCreateUserMode(false);
+        
+        // Try to sign in immediately
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (signInError) {
+          console.error("Auto login after signup error:", signInError);
+        } else if (signInData.user) {
+          console.log("Auto login successful after signup:", signInData.user);
+          setIsAdmin(true);
+          setIsAuthenticated(true);
+          toast({
+            title: "התחברת בהצלחה",
+            description: "ברוך הבא למערכת הניהול",
+          });
+          fetchQCPosts();
+        }
       }
     } catch (error: any) {
       console.error("User creation error:", error);
@@ -351,7 +421,7 @@ const Admin = () => {
                     {loading ? 'מתחבר...' : 'התחבר'}
                   </Button>
 
-                  {loginError.includes('משתמש לא קיים') && (
+                  {(loginError.includes('סיסמה שגויה') || loginError.includes('משתמש לא קיים')) && (
                     <Button 
                       type="button"
                       variant="outline"
