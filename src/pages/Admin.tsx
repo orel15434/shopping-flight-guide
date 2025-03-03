@@ -1,38 +1,45 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, checkIsAdmin } from '../integrations/supabase/client';
+import { 
+  ADMIN_EMAIL, 
+  ADMIN_PASSWORD, 
+  checkIsAdmin, 
+  adminLogin, 
+  getAdminSession,
+  adminLogout 
+} from '../integrations/supabase/client';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useToast } from '../hooks/use-toast';
-import { Trash2, Shield, LogOut, Info, UserPlus, ExternalLink } from 'lucide-react';
+import { Trash2, Shield, LogOut, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { supabase } from '../integrations/supabase/client';
 
 const Admin = () => {
-  const [email, setEmail] = useState('orelgame156@gmail.com');
-  const [password, setPassword] = useState('Admin123!');
+  const [email, setEmail] = useState(ADMIN_EMAIL);
+  const [password, setPassword] = useState(ADMIN_PASSWORD);
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [qcPosts, setQcPosts] = useState<any[]>([]);
   const [loginError, setLoginError] = useState('');
-  const [signupDisabled, setSignupDisabled] = useState(false);
-  const [createUserMode, setCreateUserMode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // בדיקת התחברות באמצעות הפונקציה החדשה
+        const { data } = getAdminSession();
         
-        if (session) {
+        if (data.session) {
           setIsAuthenticated(true);
-          console.log("User is authenticated:", session.user.email);
+          console.log("User is authenticated:", data.session.user.email);
           
-          const { isAdmin, adminData, error } = await checkIsAdmin(session.user.email || '');
+          const { isAdmin, adminData, error } = await checkIsAdmin(data.session.user.email || '');
             
           if (isAdmin && adminData) {
             console.log("User is admin:", adminData);
@@ -73,217 +80,42 @@ const Admin = () => {
     e.preventDefault();
     setLoading(true);
     setLoginError('');
-    setSignupDisabled(false);
-    
-    console.log("Attempting login with:", email, password);
     
     try {
-      const { isAdmin, error: adminCheckError } = await checkIsAdmin(email);
+      // בדיקה שהפרטים נכונים כנגד הערכים הקבועים
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        console.log("Credentials match, logging in as admin");
         
-      if (!isAdmin) {
-        setLoginError('אימייל לא מורשה למערכת הניהול');
-        toast({
-          variant: "destructive",
-          title: "אין הרשאות",
-          description: "יש להוסיף את המייל לרשימת המורשים לניהול במערכת",
-        });
-        setLoading(false);
-        return;
-      }
-      
-      console.log("Admin user verified in admin_users table");
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        console.error("Login error:", error);
+        const { data, error } = await adminLogin();
         
-        if (error.message.includes("Invalid login credentials")) {
-          // Try to sign up, but now we handle the case where signups are disabled
-          try {
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-              email,
-              password,
-            });
-            
-            if (signUpError) {
-              console.error("Auto user creation error:", signUpError);
-              
-              if (signUpError.message.includes("Signups not allowed")) {
-                setSignupDisabled(true);
-                setLoginError('הרשמה חדשה אינה מופעלת בפרויקט הנוכחי. יש לפנות למנהל המערכת.');
-                toast({
-                  variant: "destructive",
-                  title: "הרשמה חדשה אינה מופעלת",
-                  description: "יש להפעיל הרשמה בהגדרות Supabase או להשתמש במשתמש קיים",
-                });
-              } else {
-                setLoginError(`שגיאה ביצירת המשתמש: ${signUpError.message}`);
-              }
-              throw signUpError;
-            }
-            
-            if (signUpData.user) {
-              console.log("User created automatically:", signUpData.user);
-              toast({
-                title: "משתמש נוצר בהצלחה",
-                description: "המשתמש נוצר אוטומטית, מנסה להתחבר...",
-              });
-              
-              const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-                email,
-                password
-              });
-              
-              if (loginError) {
-                console.error("Login after auto-creation error:", loginError);
-                throw loginError;
-              }
-              
-              if (loginData.user) {
-                console.log("Login successful after auto-creation:", loginData.user);
-                setIsAdmin(true);
-                setIsAuthenticated(true);
-                toast({
-                  title: "התחברת בהצלחה",
-                  description: "ברוך הבא למערכת הניהול",
-                });
-                fetchQCPosts();
-                setLoading(false);
-                return;
-              }
-            }
-          } catch (signupError: any) {
-            console.error("Authentication error during signup:", signupError);
-          }
+        if (error) {
+          throw error;
         }
         
-        // If we get here, both login and signup failed
-        if (!signupDisabled) {
-          setLoginError(error.message);
-          toast({
-            variant: "destructive",
-            title: "התחברות נכשלה",
-            description: error.message,
-          });
-        }
-        
-        throw error;
-      }
-      
-      if (data.user) {
-        console.log("Login successful:", data.user);
-        setIsAdmin(true);
-        setIsAuthenticated(true);
-        toast({
-          title: "התחברת בהצלחה",
-          description: "ברוך הבא למערכת הניהול",
-        });
-        fetchQCPosts();
-      }
-    } catch (error: any) {
-      console.error("Authentication error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setLoginError('');
-    setSignupDisabled(false);
-    
-    console.log("Creating new admin user with:", email, password);
-    
-    try {
-      const { isAdmin, error: adminCheckError } = await checkIsAdmin(email);
-        
-      if (!isAdmin) {
-        setLoginError('אימייל לא מורשה למערכת הניהול');
-        toast({
-          variant: "destructive",
-          title: "אין הרשאות",
-          description: "יש להוסיף את המייל לרשימת המורשים לניהול במערכת",
-        });
-        setLoading(false);
-        return;
-      }
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      
-      if (error) {
-        console.error("User creation error:", error);
-        
-        if (error.message.includes("Signups not allowed")) {
-          setSignupDisabled(true);
-          setLoginError('הרשמה חדשה אינה מופעלת בפרויקט הנוכחי. יש לפנות למנהל המערכת.');
-          toast({
-            variant: "destructive",
-            title: "הרשמה חדשה אינה מופעלת",
-            description: "יש להפעיל הרשמה בהגדרות Supabase או להשתמש במשתמש קיים",
-          });
-        } else {
-          setLoginError(`שגיאה ביצירת המשתמש: ${error.message}`);
-          toast({
-            variant: "destructive",
-            title: "יצירת משתמש נכשלה",
-            description: error.message,
-          });
-        }
-        throw error;
-      }
-      
-      if (data.user) {
-        console.log("User created successfully:", data.user);
-        toast({
-          title: "משתמש נוצר בהצלחה",
-          description: "כעת ניתן להתחבר עם המשתמש החדש",
-        });
-        setCreateUserMode(false);
-        
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (signInError) {
-          console.error("Auto login after signup error:", signInError);
-        } else if (signInData.user) {
-          console.log("Auto login successful after signup:", signInData.user);
-          setIsAdmin(true);
+        if (data) {
+          // שמירה במצב המקומי ובלוקל סטורג'
+          localStorage.setItem('admin_logged_in', 'true');
           setIsAuthenticated(true);
+          setIsAdmin(true);
+          
           toast({
             title: "התחברת בהצלחה",
             description: "ברוך הבא למערכת הניהול",
           });
+          
           fetchQCPosts();
         }
-      }
-    } catch (error: any) {
-      console.error("User creation error:", error);
-      
-      let errorMessage = "אירעה שגיאה ביצירת המשתמש";
-      
-      if (error.message.includes("already registered")) {
-        errorMessage = "המייל כבר רשום במערכת - נסה להתחבר";
-        setCreateUserMode(false);
-      }
-      
-      if (!signupDisabled) {
-        setLoginError(errorMessage);
+      } else {
+        setLoginError('פרטי ההתחברות שגויים');
         toast({
           variant: "destructive",
-          title: "יצירת משתמש נכשלה",
-          description: errorMessage,
+          title: "התחברות נכשלה",
+          description: "פרטי ההתחברות שגויים",
         });
       }
+    } catch (error: any) {
+      console.error("Authentication error:", error);
+      setLoginError(error.message || 'אירעה שגיאה בהתחברות');
     } finally {
       setLoading(false);
     }
@@ -318,7 +150,7 @@ const Admin = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await adminLogout();
     setIsAuthenticated(false);
     setIsAdmin(false);
     toast({
@@ -341,7 +173,7 @@ const Admin = () => {
               <Alert className="mb-4 bg-blue-50 text-blue-800 border-blue-200">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  השתמש באימייל {email} ובסיסמה שתבחר להתחברות
+                  המשתמש {ADMIN_EMAIL} הוא היחיד המורשה להתחבר למערכת הניהול (הסיסמה היא {ADMIN_PASSWORD})
                 </AlertDescription>
               </Alert>
               
@@ -353,123 +185,43 @@ const Admin = () => {
                 </Alert>
               )}
               
-              {signupDisabled && (
-                <Alert className="mb-4 bg-yellow-50 text-yellow-800 border-yellow-200">
-                  <AlertDescription className="space-y-2">
-                    <p>יש להפעיל הרשמה בהגדרות Supabase:</p>
-                    <p className="flex items-center gap-1 text-sm">
-                      <span>1. לכנס ל-Supabase Dashboard</span>
-                      <a href="https://supabase.com/dashboard/project/szpbqcvzuksaqrtihbea/auth/providers" 
-                         target="_blank" 
-                         rel="noopener noreferrer"
-                         className="flex items-center gap-1 text-blue-600 hover:underline">
-                        <ExternalLink size={14} />
-                        <span>קישור</span>
-                      </a>
-                    </p>
-                    <p>2. לבחור Authentication &gt; Providers</p>
-                    <p>3. להפעיל את Email ולכבות את "Confirm email"</p>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              {!createUserMode ? (
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium mb-1">
-                      אימייל
-                    </label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="הזן אימייל"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium mb-1">
-                      סיסמה
-                    </label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="הזן סיסמה"
-                      required
-                    />
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={loading}
-                  >
-                    {loading ? 'מתחבר...' : 'התחבר'}
-                  </Button>
-
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    className="w-full flex items-center gap-2 mt-2" 
-                    onClick={() => setCreateUserMode(true)}
-                  >
-                    <UserPlus size={16} />
-                    יצירת משתמש חדש
-                  </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleCreateUser} className="space-y-4">
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium mb-1">
-                      אימייל
-                    </label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="הזן אימייל"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium mb-1">
-                      סיסמה
-                    </label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="הזן סיסמה"
-                      required
-                    />
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full flex items-center gap-2" 
-                    disabled={loading}
-                  >
-                    <UserPlus size={16} />
-                    {loading ? 'יוצר משתמש...' : 'צור משתמש חדש'}
-                  </Button>
-                  
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    className="w-full" 
-                    onClick={() => setCreateUserMode(false)}
-                  >
-                    חזרה להתחברות
-                  </Button>
-                </form>
-              )}
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium mb-1">
+                    אימייל
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="הזן אימייל"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium mb-1">
+                    סיסמה
+                  </label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="הזן סיסמה"
+                    required
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading}
+                >
+                  {loading ? 'מתחבר...' : 'התחבר'}
+                </Button>
+              </form>
             </div>
           </div>
         </main>
