@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -80,6 +81,7 @@ const Admin = () => {
       }
       
       if (data) {
+        console.log("Setting posts in state:", data.length, "posts");
         setQcPosts(data);
       }
     } catch (error: any) {
@@ -148,20 +150,30 @@ const Admin = () => {
     if (confirmed) {
       try {
         setDeletingId(postId);
+        console.log("Starting deletion process for post ID:", postId);
         
         const { success, error } = await deleteQCPost(postId);
           
         if (error) {
+          console.error("Deletion response returned an error:", error);
           throw error;
         }
         
         if (success) {
-          setQcPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+          console.log("Deletion successful, updating UI");
+          // עדכון ה-state רק לאחר מחיקה מוצלחת מהמסד
+          setQcPosts(prevPosts => {
+            const filteredPosts = prevPosts.filter(post => post.id !== postId);
+            console.log("Posts after filtering:", filteredPosts.length);
+            return filteredPosts;
+          });
           
           toast({
             title: "נמחק בהצלחה",
-            description: "הפוסט נמחק בהצלחה",
+            description: "הפוסט נמחק בהצלחה ממסד הנתונים",
           });
+        } else {
+          throw new Error("Delete operation failed without specific error");
         }
       } catch (error: any) {
         console.error('Error with deletion:', error);
@@ -208,6 +220,7 @@ const Admin = () => {
     
     try {
       setUpdatingId(editingPost.id);
+      console.log("Starting update process for post ID:", editingPost.id);
       
       const updateData = {
         title: editingPost.title,
@@ -220,10 +233,13 @@ const Admin = () => {
       const { data, error } = await updateQCPost(editingPost.id, updateData);
         
       if (error) {
+        console.error("Update response returned an error:", error);
         throw error;
       }
       
       if (data) {
+        console.log("Update successful, updating UI with:", data);
+        // עדכון ה-state רק לאחר עדכון מוצלח במסד
         setQcPosts(prevPosts => 
           prevPosts.map(post => 
             post.id === editingPost.id ? data : post
@@ -232,10 +248,12 @@ const Admin = () => {
         
         toast({
           title: "עודכן בהצלחה",
-          description: "הפוסט עודכן בהצלחה",
+          description: "הפוסט עודכן בהצלחה במסד הנתונים",
         });
         
         handleCancelEdit();
+      } else {
+        throw new Error("Update operation returned no data");
       }
     } catch (error: any) {
       console.error('Error with update:', error);

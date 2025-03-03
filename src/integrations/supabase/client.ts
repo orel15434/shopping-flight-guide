@@ -80,13 +80,23 @@ export const deleteQCPost = async (postId: string) => {
   try {
     console.log(`Attempting to delete post with ID: ${postId}`);
     
-    const { error } = await supabase
+    // בדיקה שה-ID תקין לפני המחיקה
+    if (!postId || typeof postId !== 'string' || postId.trim() === '') {
+      throw new Error('Invalid post ID provided');
+    }
+    
+    // מחיקה עם בדיקה ספציפית יותר של תשובה
+    const response = await supabase
       .from('qc_posts')
       .delete()
       .eq('id', postId);
       
-    if (error) throw error;
+    if (response.error) {
+      console.error(`Database error when deleting post ${postId}:`, response.error);
+      throw response.error;
+    }
     
+    // וידוא שהפעולה הצליחה
     console.log(`Successfully deleted post with ID: ${postId}`);
     return { success: true, error: null };
   } catch (error) {
@@ -99,17 +109,33 @@ export const updateQCPost = async (postId: string, updateData: any) => {
   try {
     console.log(`Attempting to update post with ID: ${postId}`, updateData);
     
+    // וידוא שה-ID ונתוני העדכון תקינים
+    if (!postId || typeof postId !== 'string' || postId.trim() === '') {
+      throw new Error('Invalid post ID provided');
+    }
+    
+    if (!updateData || typeof updateData !== 'object') {
+      throw new Error('Invalid update data provided');
+    }
+    
     const { data, error } = await supabase
       .from('qc_posts')
       .update(updateData)
       .eq('id', postId)
-      .select()
-      .single();
+      .select();
       
-    if (error) throw error;
+    if (error) {
+      console.error(`Database error when updating post ${postId}:`, error);
+      throw error;
+    }
     
-    console.log(`Successfully updated post with ID: ${postId}`, data);
-    return { data, error: null };
+    // בדיקה שהתקבלו נתונים
+    if (!data || data.length === 0) {
+      throw new Error(`No post found with ID: ${postId}`);
+    }
+    
+    console.log(`Successfully updated post with ID: ${postId}`, data[0]);
+    return { data: data[0], error: null };
   } catch (error) {
     console.error(`Error updating post ${postId}:`, error);
     return { data: null, error };
@@ -125,9 +151,12 @@ export const fetchQCPosts = async () => {
       .select('*')
       .order('created_at', { ascending: false });
       
-    if (error) throw error;
+    if (error) {
+      console.error("Database error when fetching QC posts:", error);
+      throw error;
+    }
     
-    console.log(`Successfully fetched ${data?.length || 0} QC posts`);
+    console.log(`Successfully fetched ${data?.length || 0} QC posts`, data);
     return { data, error: null };
   } catch (error) {
     console.error("Error fetching QC posts:", error);
