@@ -66,10 +66,6 @@ const QCGallery = () => {
     setDeleting(postId);
     console.log("Starting deletion process for post ID:", postId);
     
-    // Optimistic update - remove post from UI immediately
-    const previousPosts = [...posts];
-    setPosts(posts.filter(post => post.id !== postId));
-    
     try {
       // Attempt to delete the post from the database
       const { success, error } = await deleteQCPost(postId);
@@ -78,20 +74,17 @@ const QCGallery = () => {
         throw error || new Error("Failed to delete post");
       }
       
+      // On success, remove post from state
+      setPosts(posts.filter(post => post.id !== postId));
+      
       // Success message
       toast({
         description: "הפוסט נמחק בהצלחה",
         variant: "default",
       });
       
-      // Reload posts to ensure UI is in sync with database
-      await loadPosts();
-      
     } catch (error: any) {
       console.error("Deletion error:", error);
-      
-      // Restore the previous state if deletion failed
-      setPosts(previousPosts);
       
       // Show error message
       toast({
