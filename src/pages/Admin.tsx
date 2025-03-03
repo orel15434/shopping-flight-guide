@@ -83,6 +83,9 @@ const Admin = () => {
       if (data) {
         console.log("Setting posts in state:", data.length, "posts");
         setQcPosts(data);
+      } else {
+        setQcPosts([]);
+        console.log("No posts returned from database");
       }
     } catch (error: any) {
       console.error('Error fetching posts:', error);
@@ -152,6 +155,7 @@ const Admin = () => {
         setDeletingId(postId);
         console.log("Starting deletion process for post ID:", postId);
         
+        // קריאה לפונקציית המחיקה 
         const { success, error } = await deleteQCPost(postId);
           
         if (error) {
@@ -167,6 +171,9 @@ const Admin = () => {
             console.log("Posts after filtering:", filteredPosts.length);
             return filteredPosts;
           });
+          
+          // וידוא שהפוסט באמת נמחק דרך בדיקת הנתונים מהשרת
+          await loadQCPosts();
           
           toast({
             title: "נמחק בהצלחה",
@@ -230,6 +237,7 @@ const Admin = () => {
         images: imageUrls
       };
       
+      // קריאה לפונקציית העדכון
       const { data, error } = await updateQCPost(editingPost.id, updateData);
         
       if (error) {
@@ -245,6 +253,9 @@ const Admin = () => {
             post.id === editingPost.id ? data : post
           )
         );
+        
+        // וידוא שהפוסט באמת התעדכן דרך בדיקת הנתונים מהשרת
+        await loadQCPosts();
         
         toast({
           title: "עודכן בהצלחה",

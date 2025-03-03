@@ -85,19 +85,32 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // מחיקה עם בדיקה ספציפית יותר של תשובה
-    const response = await supabase
+    // מבצע את המחיקה - חשוב להשתמש בdelete עם single ולא reselect
+    const { error } = await supabase
       .from('qc_posts')
       .delete()
       .eq('id', postId);
       
-    if (response.error) {
-      console.error(`Database error when deleting post ${postId}:`, response.error);
-      throw response.error;
+    if (error) {
+      console.error(`Database error when deleting post ${postId}:`, error);
+      throw error;
     }
     
     // וידוא שהפעולה הצליחה
     console.log(`Successfully deleted post with ID: ${postId}`);
+    
+    // בדיקה שהפוסט באמת נמחק
+    const { data: checkData } = await supabase
+      .from('qc_posts')
+      .select('id')
+      .eq('id', postId)
+      .single();
+      
+    if (checkData) {
+      console.error(`Post ${postId} still exists after delete operation`);
+      throw new Error('Post was not deleted successfully');
+    }
+    
     return { success: true, error: null };
   } catch (error) {
     console.error(`Error deleting post ${postId}:`, error);
@@ -118,6 +131,7 @@ export const updateQCPost = async (postId: string, updateData: any) => {
       throw new Error('Invalid update data provided');
     }
     
+    // חשוב שהעדכון יחזיר את הנתונים המעודכנים
     const { data, error } = await supabase
       .from('qc_posts')
       .update(updateData)
@@ -146,6 +160,7 @@ export const fetchQCPosts = async () => {
   try {
     console.log("Fetching QC posts...");
     
+    // נשתמש בorder כדי להציג את הפוסטים העדכניים ביותר קודם
     const { data, error } = await supabase
       .from('qc_posts')
       .select('*')
@@ -156,7 +171,7 @@ export const fetchQCPosts = async () => {
       throw error;
     }
     
-    console.log(`Successfully fetched ${data?.length || 0} QC posts`, data);
+    console.log(`Successfully fetched ${data?.length || 0} QC posts`);
     return { data, error: null };
   } catch (error) {
     console.error("Error fetching QC posts:", error);
