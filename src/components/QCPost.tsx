@@ -76,7 +76,6 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
         console.error('Error rating post:', error);
         toast({
           variant: "destructive",
-          title: "שגיאה בדירוג",
           description: "לא הצלחנו לשמור את הדירוג שלך",
         });
       }

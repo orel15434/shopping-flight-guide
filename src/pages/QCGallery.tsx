@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -5,7 +6,7 @@ import Footer from '../components/Footer';
 import QCPost, { QCPostType } from '../components/QCPost';
 import AddQCPostForm from '../components/AddQCPostForm';
 import { Button } from '../components/ui/button';
-import { PlusCircle, X, Images, Trash2 } from 'lucide-react';
+import { PlusCircle, X, Images } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 
 const QCGallery = () => {
@@ -57,45 +58,6 @@ const QCGallery = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-  
-  const handleDeletePost = async (postId: string) => {
-    if (!postId || deleting) return;
-    
-    setDeleting(postId);
-    console.log("Starting deletion process for post ID:", postId);
-    
-    try {
-      // Attempt to delete the post from the database
-      const { success, error } = await deleteQCPost(postId);
-      
-      if (!success) {
-        throw error || new Error("Failed to delete post");
-      }
-      
-      // On success, remove post from state
-      setPosts(posts.filter(post => post.id !== postId));
-      
-      // Success message
-      toast({
-        description: "הפוסט נמחק בהצלחה",
-        variant: "default",
-      });
-      
-    } catch (error: any) {
-      console.error("Deletion error:", error);
-      
-      // Show error message
-      toast({
-        description: error.message || "הפוסט לא נמחק בהצלחה",
-        variant: "destructive",
-      });
-      
-      // Reload posts to ensure UI is in sync with database
-      await loadPosts();
-    } finally {
-      setDeleting(null);
     }
   };
   
@@ -299,8 +261,6 @@ const QCGallery = () => {
                   key={post.id} 
                   post={post} 
                   onRate={(rating) => handleRatePost(post.id, rating)}
-                  onDelete={handleDeletePost}
-                  showDeleteButton={true}
                 />
               ))}
             </div>

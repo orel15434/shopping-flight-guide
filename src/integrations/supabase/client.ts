@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -84,8 +85,8 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // Directly execute a DELETE operation
-    const { error: deleteError, status } = await supabase
+    // Directly execute a DELETE operation with return data - important for permanent deletion
+    const { error: deleteError } = await supabase
       .from('qc_posts')
       .delete()
       .eq('id', postId);
@@ -95,13 +96,20 @@ export const deleteQCPost = async (postId: string) => {
       throw deleteError;
     }
     
-    if (status === 204) {
-      console.log(`Successfully deleted post with ID: ${postId}`);
-      return { success: true, error: null };
-    } else {
-      console.error(`Unexpected status code ${status} when deleting post ${postId}`);
-      throw new Error(`Deletion failed with status code: ${status}`);
+    // Double check the deletion was successful by trying to fetch the post
+    const { data: checkData } = await supabase
+      .from('qc_posts')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+      
+    if (checkData) {
+      console.error(`Post ${postId} still exists after deletion attempt`);
+      throw new Error('Post was not deleted successfully - it still exists in the database');
     }
+    
+    console.log(`Successfully deleted post with ID: ${postId}`);
+    return { success: true, error: null };
   } catch (error) {
     console.error(`Error deleting post ${postId}:`, error);
     return { success: false, error };
