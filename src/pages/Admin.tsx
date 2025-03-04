@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -428,9 +427,10 @@ const Admin = () => {
                       value={editingPost.category}
                       onChange={(e) => setEditingPost({...editingPost, category: e.target.value})}
                     >
+                      <option value="clothing">בגדים</option>
                       <option value="shoes">נעליים</option>
-                      <option value="clothes">בגדים</option>
-                      <option value="accessories">אקססוריז</option>
+                      <option value="underwear">הלבשה תחתונה</option>
+                      <option value="electronics">אלקטרוניקה</option>
                       <option value="other">אחר</option>
                     </select>
                   </div>
