@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { motion, HTMLMotionProps } from "framer-motion";
+import { motion, HTMLMotionProps, MotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 
@@ -10,10 +10,11 @@ interface CategoryItem {
   icon: LucideIcon;
 }
 
-interface AnimatedCategoryBarProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onDrag'> {
+interface AnimatedCategoryBarProps {
   items: CategoryItem[];
   activeItem: string;
   onItemClick: (id: string) => void;
+  className?: string;
 }
 
 const itemVariants = {
@@ -57,7 +58,7 @@ const sharedTransition = {
 };
 
 export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCategoryBarProps>(
-  ({ className, items, activeItem, onItemClick, ...props }, ref) => {
+  ({ className, items, activeItem, onItemClick }, ref) => {
     const getGradient = (id: string) => {
       switch(id) {
         case 'clothing':
@@ -88,16 +89,19 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
       }
     };
 
+    const motionProps: MotionProps = {
+      initial: "initial",
+      whileHover: "hover"
+    };
+
     return (
       <motion.nav
-        ref={ref as React.Ref<HTMLElement>}
+        ref={ref}
         className={cn(
           "p-2 rounded-2xl bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-lg border border-border/40 shadow-lg relative overflow-hidden",
           className,
         )}
-        initial="initial"
-        whileHover="hover"
-        {...props as HTMLMotionProps<"nav">}
+        {...motionProps}
       >
         <motion.div
           className="absolute -inset-2 bg-gradient-radial from-transparent via-blue-400/20 via-30% via-purple-400/20 via-60% via-red-400/20 via-90% to-transparent rounded-3xl z-0 pointer-events-none"
