@@ -4,7 +4,7 @@ import { nanoid } from 'nanoid';
 import { Button } from './ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
-import { ImagePlus, Trash2, Check, Loader2 } from 'lucide-react';
+import { ImagePlus, Trash2, Check, Loader2, DollarSign, Scale } from 'lucide-react';
 import { QCPostType } from './QCPost';
 import { agents } from '../pages/Index';
 import { supabase } from '../integrations/supabase/client';
@@ -29,6 +29,8 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
   const [description, setDescription] = useState('');
   const [productLink, setProductLink] = useState('');
   const [agent, setAgent] = useState('');
+  const [price, setPrice] = useState<number | undefined>(undefined);
+  const [weight, setWeight] = useState<number | undefined>(undefined);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -101,6 +103,34 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     setImagePreviewUrls(newPreviews);
   };
 
+  // טיפול בשינוי מחיר - ומרה למספר
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '') {
+      setPrice(undefined);
+      return;
+    }
+    
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue)) {
+      setPrice(numericValue);
+    }
+  };
+
+  // טיפול בשינוי משקל - המרה למספר
+  const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '') {
+      setWeight(undefined);
+      return;
+    }
+    
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue)) {
+      setWeight(numericValue);
+    }
+  };
+
   // טיפול בשליחת הטופס
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,6 +154,12 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
       newErrors.productLink = 'נא להזין קישור למוצר';
     } else if (!isValidProductLink(productLink)) {
       newErrors.productLink = 'קישור לא תקין. ניתן להזין קישורים מ-Taobao, Weidian, 1688, Alibaba או AliExpress בלבד';
+    }
+    
+    if (price === undefined) {
+      newErrors.price = 'נא להזין מחיר';
+    } else if (isNaN(price) || price <= 0) {
+      newErrors.price = 'נא להזין מחיר חיובי';
     }
     
     if (imageFiles.length === 0) {
@@ -162,7 +198,9 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
           timestamp: new Date().toISOString(),
           rating: 0,
           votes: 0,
-          userRatings: {}
+          userRatings: {},
+          price: price,
+          weight: weight
         };
         
         onSubmit(newPost);
@@ -208,6 +246,45 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
           className={`min-h-[100px] ${errors.description ? 'border-red-500' : ''}`}
         />
         {errors.description && <p className="mt-1 text-sm text-red-500">{errors.description}</p>}
+      </div>
+
+      {/* מחיר */}
+      <div>
+        <label htmlFor="price" className="block mb-2 font-medium">
+          מחיר (בדולרים) <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <Input
+            id="price"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value={price === undefined ? '' : price}
+            onChange={handlePriceChange}
+            placeholder="הזן את מחיר המוצר בדולרים"
+            className={`pl-8 ${errors.price ? 'border-red-500' : ''}`}
+          />
+          <DollarSign size={16} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+        </div>
+        {errors.price && <p className="mt-1 text-sm text-red-500">{errors.price}</p>}
+      </div>
+      
+      {/* משקל (אופציונלי) */}
+      <div>
+        <label htmlFor="weight" className="block mb-2 font-medium">
+          משקל (גרמים) <span className="text-xs text-muted-foreground">(אופציונלי)</span>
+        </label>
+        <div className="relative">
+          <Input
+            id="weight"
+            type="number"
+            min="1"
+            value={weight === undefined ? '' : weight}
+            onChange={handleWeightChange}
+            placeholder="הזן את משקל המוצר בגרמים"
+          />
+          <Scale size={16} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+        </div>
       </div>
       
       {/* סוכן */}

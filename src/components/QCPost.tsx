@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { Star, ExternalLink, Trash2 } from 'lucide-react';
+import { Star, ExternalLink, Trash2, DollarSign, Scale } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import he from 'date-fns/locale/he';
@@ -23,6 +24,8 @@ export interface QCPostType {
   votes: number;
   user_ratings?: Record<string, number>;
   userRatings?: Record<string, number>; // For backward compatibility
+  price?: number; // המחיר בדולרים
+  weight?: number; // המשקל בגרמים
 }
 
 interface QCPostProps {
@@ -92,6 +95,7 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
   
   return (
     <div className="glass-card rounded-xl overflow-hidden hover:shadow-lg transition-shadow relative">
+      {/* כפתור מחיקה (אם מוצג) */}
       {showDeleteButton && onDelete && (
         <Button
           variant="destructive"
@@ -101,6 +105,14 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
         >
           <Trash2 size={16} />
         </Button>
+      )}
+      
+      {/* תג מחיר (אם קיים) */}
+      {post.price && (
+        <div className="absolute top-2 left-2 z-10 bg-primary text-white px-3 py-1 rounded-full flex items-center font-bold shadow-lg">
+          <DollarSign size={16} className="mr-1" />
+          <span>{post.price}</span>
+        </div>
       )}
       
       <div className="relative aspect-[4/3] bg-secondary/20 overflow-hidden">
@@ -160,6 +172,23 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
             <span>{agentInfo.name}</span>
           </div>
         )}
+        
+        {/* מידע על מחיר ומשקל */}
+        <div className="flex flex-wrap gap-3 mb-3">
+          {post.price && (
+            <div className="flex items-center text-sm text-muted-foreground bg-secondary/20 px-2 py-1 rounded">
+              <DollarSign size={14} className="mr-1" />
+              <span>מחיר: {post.price}$</span>
+            </div>
+          )}
+          
+          {post.weight && (
+            <div className="flex items-center text-sm text-muted-foreground bg-secondary/20 px-2 py-1 rounded">
+              <Scale size={14} className="mr-1" />
+              <span>משקל: {post.weight}g</span>
+            </div>
+          )}
+        </div>
         
         <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{post.description}</p>
         

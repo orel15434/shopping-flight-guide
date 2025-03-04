@@ -44,7 +44,9 @@ const QCGallery = () => {
               post.user_ratings as Record<string, number> : 
               {}
             ) : {},
-          created_at: post.created_at
+          created_at: post.created_at,
+          price: post.price,
+          weight: post.weight
         }));
         
         setPosts(formattedPosts);
@@ -74,7 +76,9 @@ const QCGallery = () => {
         agent: post.agent,
         rating: 0,
         votes: 0,
-        user_ratings: {}
+        user_ratings: {},
+        price: post.price,
+        weight: post.weight
       };
       
       console.log('Prepared post for insertion:', newPost);
@@ -108,7 +112,9 @@ const QCGallery = () => {
               data.user_ratings as Record<string, number> : 
               {}
             ) : {},
-          created_at: data.created_at
+          created_at: data.created_at,
+          price: data.price,
+          weight: data.weight
         };
         
         setPosts([formattedPost, ...posts]);
