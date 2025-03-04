@@ -41,7 +41,7 @@ const Admin = () => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data } = getAdminSession();
+        const { data } = await getAdminSession();
         
         if (data.session) {
           setIsAuthenticated(true);
