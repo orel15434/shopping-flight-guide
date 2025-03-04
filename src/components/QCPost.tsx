@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { Star, ExternalLink, Trash2, DollarSign, Scale, X } from 'lucide-react';
+import { Star, ExternalLink, Trash2, DollarSign, Scale, X, Share2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import he from 'date-fns/locale/he';
@@ -42,6 +43,7 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
   const [hasRated, setHasRated] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogImageIndex, setDialogImageIndex] = useState(0);
+  const [showShareTooltip, setShowShareTooltip] = useState(false);
   const { toast } = useToast();
   
   const getProductSite = (url: string): string => {
@@ -108,6 +110,50 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
   const formattedDate = format(new Date(timestamp), 'dd בMMMM yyyy', { locale: he });
 
   const agentInfo = agents.find(a => a.id === post.agent);
+  
+  const handleShare = () => {
+    const postUrl = `${window.location.origin}/qc-post/${post.id}`;
+    
+    // Try to use the native share API if available
+    if (navigator.share) {
+      navigator.share({
+        title: post.title,
+        text: post.description,
+        url: postUrl,
+      })
+      .then(() => {
+        console.log('Successfully shared');
+      })
+      .catch((error) => {
+        console.error('Error sharing:', error);
+        copyToClipboard(postUrl);
+      });
+    } else {
+      copyToClipboard(postUrl);
+    }
+  };
+  
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        setShowShareTooltip(true);
+        toast({
+          description: "הקישור הועתק ללוח!",
+          variant: "default",
+        });
+        
+        setTimeout(() => {
+          setShowShareTooltip(false);
+        }, 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+        toast({
+          description: "לא הצלחנו להעתיק את הקישור",
+          variant: "destructive",
+        });
+      });
+  };
   
   return (
     <>
@@ -238,14 +284,27 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
             )}
           </div>
           
-          <div className="mb-4">
+          <div className="grid grid-cols-2 gap-2 mb-4">
             <InteractiveHoverButton 
               href={productLink}
-              className="w-full"
             >
               <ExternalLink size={16} />
               <span>קנה ב{getProductSite(productLink)}</span>
             </InteractiveHoverButton>
+            
+            <Button
+              onClick={handleShare}
+              variant="outline"
+              className="relative group"
+            >
+              <Share2 size={16} className="mr-2" />
+              <span>שתף</span>
+              {showShareTooltip && (
+                <div className="absolute top-[-40px] left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-3 py-1 rounded">
+                  הועתק ללוח!
+                </div>
+              )}
+            </Button>
           </div>
           
           <div className="flex justify-between items-center">
