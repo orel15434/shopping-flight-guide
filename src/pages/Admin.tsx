@@ -95,45 +95,21 @@ const Admin = () => {
     e.preventDefault();
     setLoading(true);
     setLoginError('');
-    
     try {
-      console.log("Attempting to log in with:", email);
-      
       const { data, error } = await adminLogin(email, password);
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data && data.session) {
-        localStorage.setItem('admin_logged_in', 'true');
-        setIsAuthenticated(true);
-        
-        const { isAdmin, adminData, error: adminCheckError } = await checkIsAdmin(email);
-        
-        if (adminCheckError) {
-          throw adminCheckError;
-        }
-        
-        if (isAdmin) {
-          setIsAdmin(true);
-          
-          toast.success("התחברת בהצלחה", {
-            description: "ברוך הבא למערכת הניהול",
-          });
-          
-          loadQCPosts();
-        } else {
-          throw new Error("אין לך הרשאות גישה לעמוד זה");
-        }
-      } else {
-        throw new Error("התחברות נכשלה - לא התקבלו נתונים מהשרת");
-      }
+      if (error) throw error;
+      localStorage.setItem('admin_logged_in', 'true');
+      setIsAuthenticated(true);
+      setIsAdmin(true);
+      toast.success("התחברת בהצלחה", {
+        description: "ברוך הבא למערכת הניהול",
+      });
+      loadQCPosts();
     } catch (error: any) {
       console.error("Authentication error:", error);
       setLoginError(error.message || 'אירעה שגיאה בהתחברות');
       toast.error("התחברות נכשלה", {
-        description: error.message || 'פרטי ההתחברות שגויים',
+        description: error.message || "אירעה שגיאה",
       });
     } finally {
       setLoading(false);
