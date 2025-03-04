@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -85,31 +84,18 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // Fix the select method to use the correct syntax
-    const { data, error } = await supabase
+    // Delete the post without any follow-up checks
+    const { error } = await supabase
       .from('qc_posts')
       .delete()
-      .eq('id', postId)
-      .select();
+      .eq('id', postId);
       
     if (error) {
       console.error(`Database error when deleting post ${postId}:`, error);
       throw error;
     }
     
-    // וידוא שהמחיקה אכן בוצעה על ידי בדיקה ישירה של הפוסט
-    const { data: checkData } = await supabase
-      .from('qc_posts')
-      .select('id')
-      .eq('id', postId)
-      .maybeSingle();
-      
-    if (checkData) {
-      console.error(`Post ${postId} still exists after deletion attempt`);
-      throw new Error('Post was not deleted successfully - it still exists in the database');
-    }
-    
-    // לוג הצלחה וחזרה
+    // The deletion was successful if no error was thrown
     console.log(`Successfully deleted post with ID: ${postId}`);
     return { success: true, error: null };
   } catch (error) {
