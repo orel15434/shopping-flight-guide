@@ -109,7 +109,7 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
       
       {/* תג מחיר (אם קיים) */}
       {post.price && (
-        <div className="absolute top-2 left-2 z-10 bg-primary text-white px-3 py-1 rounded-full flex items-center font-bold shadow-lg">
+        <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-full flex items-center font-bold shadow-lg">
           <DollarSign size={16} className="mr-1" />
           <span>{post.price}</span>
         </div>
