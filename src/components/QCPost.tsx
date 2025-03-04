@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Star, ExternalLink, Trash2, DollarSign, Scale, X, Share2 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -284,7 +283,7 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
             )}
           </div>
           
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="flex flex-col gap-2 mb-4">
             <InteractiveHoverButton 
               href={productLink}
             >
@@ -292,19 +291,18 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
               <span>קנה ב{getProductSite(productLink)}</span>
             </InteractiveHoverButton>
             
-            <Button
+            <InteractiveHoverButton
               onClick={handleShare}
-              variant="outline"
               className="relative group"
             >
-              <Share2 size={16} className="mr-2" />
+              <Share2 size={16} />
               <span>שתף</span>
               {showShareTooltip && (
                 <div className="absolute top-[-40px] left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-3 py-1 rounded">
                   הועתק ללוח!
                 </div>
               )}
-            </Button>
+            </InteractiveHoverButton>
           </div>
           
           <div className="flex justify-between items-center">
