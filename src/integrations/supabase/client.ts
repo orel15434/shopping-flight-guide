@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -84,7 +85,7 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // Delete the post without any follow-up checks
+    // Delete the post and don't try to check afterward
     const { error } = await supabase
       .from('qc_posts')
       .delete()
@@ -95,7 +96,7 @@ export const deleteQCPost = async (postId: string) => {
       throw error;
     }
     
-    // The deletion was successful if no error was thrown
+    // If we get here with no error, consider the operation successful
     console.log(`Successfully deleted post with ID: ${postId}`);
     return { success: true, error: null };
   } catch (error) {

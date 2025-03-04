@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -145,43 +144,30 @@ const Admin = () => {
         setDeletingId(postId);
         console.log("Starting deletion process for post ID:", postId);
         
-        // Save the original post state for rollback if needed
-        const originalPosts = [...qcPosts];
+        setQcPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
         
-        // Optimistic UI update - remove post from UI immediately
-        setQcPosts(qcPosts.filter(post => post.id !== postId));
-        
-        // Attempt to delete from database
         const { success, error } = await deleteQCPost(postId);
           
         if (error) {
           console.error("Deletion response returned an error:", error);
-          
-          // Roll back to original state if there was an error
-          setQcPosts(originalPosts);
-          
-          throw error;
+          toast.error(`מחיקה נכשלה: ${error.message || "אירעה שגיאה בתהליך המחיקה"}`);
+          await loadQCPosts();
+          return;
         }
         
         if (success) {
           console.log("Deletion successful");
-          
           toast.success("נמחק בהצלחה", {
             description: "הפוסט נמחק בהצלחה ממסד הנתונים",
           });
-          
-          // Ensure data is reloaded from server after successful deletion
           await loadQCPosts();
         } else {
-          // Roll back to original state if there was an error
-          setQcPosts(originalPosts);
-          throw new Error("Delete operation failed without specific error");
+          toast.error("מחיקה נכשלה - סיבה לא ידועה");
+          await loadQCPosts();
         }
       } catch (error: any) {
         console.error('Error with deletion:', error);
         toast.error(`מחיקה נכשלה: ${error.message || "אירעה שגיאה בתהליך המחיקה"}`);
-        
-        // Always reload data from server to ensure our UI is in sync with database state
         await loadQCPosts();
       } finally {
         setDeletingId(null);
@@ -223,9 +209,6 @@ const Admin = () => {
       setUpdatingId(editingPost.id);
       console.log("Starting update process for post ID:", editingPost.id);
       
-      // Save original post state for rollback if needed
-      const originalPosts = [...qcPosts];
-      
       const updateData = {
         title: editingPost.title,
         description: editingPost.description,
@@ -234,22 +217,12 @@ const Admin = () => {
         images: imageUrls
       };
       
-      // Optimistic UI update
-      setQcPosts(prevPosts => 
-        prevPosts.map(post => 
-          post.id === editingPost.id ? {...post, ...updateData} : post
-        )
-      );
-      
       const { data, error } = await updateQCPost(editingPost.id, updateData);
         
       if (error) {
         console.error("Update response returned an error:", error);
-        
-        // Roll back to original state if there was an error
-        setQcPosts(originalPosts);
-        
-        throw error;
+        toast.error(`עדכון נכשל: ${error.message || "אירעה שגיאה בתהליך העדכון"}`);
+        return;
       }
       
       if (data) {
@@ -260,18 +233,17 @@ const Admin = () => {
         });
         
         handleCancelEdit();
+        await loadQCPosts();
       } else {
-        // Roll back if no data returned
-        setQcPosts(originalPosts);
-        throw new Error("Update operation returned no data");
+        toast.error("עדכון נכשל - לא התקבלו נתונים מהשרת");
+        await loadQCPosts();
       }
     } catch (error: any) {
       console.error('Error with update:', error);
       toast.error(`עדכון נכשל: ${error.message || "אירעה שגיאה בתהליך העדכון"}`);
+      await loadQCPosts();
     } finally {
       setUpdatingId(null);
-      // Reload data from server to ensure our UI is in sync with database state
-      await loadQCPosts();
     }
   };
 
