@@ -30,6 +30,7 @@ export type Database = {
       qc_posts: {
         Row: {
           agent: string
+          category: string | null
           created_at: string
           description: string | null
           id: string
@@ -44,6 +45,7 @@ export type Database = {
         }
         Insert: {
           agent: string
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -58,6 +60,7 @@ export type Database = {
         }
         Update: {
           agent?: string
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string
