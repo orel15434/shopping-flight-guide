@@ -67,6 +67,7 @@ export default {
 			fontFamily: {
 				sans: ['Assistant', 'system-ui', 'sans-serif'],
 				serif: ['Frank Ruhl Libre', 'serif'],
+				poppins: ['Poppins', 'sans-serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

@@ -65,6 +65,10 @@
     @apply bg-gradient-to-b from-foreground to-foreground/80 bg-clip-text text-transparent;
   }
   
+  .blue-gradient-text {
+    @apply bg-gradient-to-r from-blue-700 to-blue-400 bg-clip-text text-transparent;
+  }
+  
   .button-animation {
     @apply transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95;
   }

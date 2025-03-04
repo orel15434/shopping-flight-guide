@@ -36,9 +36,11 @@ const Header = () => {
       <div className="container flex items-center justify-between">
         <Link 
           to="/" 
-          className="text-foreground font-serif text-2xl font-bold tracking-tight"
+          className="font-poppins text-foreground text-2xl font-bold tracking-tight"
         >
-          <span className="heading-gradient">רכישות מסין</span>
+          <span className="bg-gradient-to-r from-blue-700 to-blue-400 bg-clip-text text-transparent">
+            PoPobuyIL
+          </span>
         </Link>
         
         {/* Desktop Navigation */}
