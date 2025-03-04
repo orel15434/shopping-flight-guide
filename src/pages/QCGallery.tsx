@@ -260,7 +260,8 @@ const QCGallery = () => {
                 <QCPost 
                   key={post.id} 
                   post={post} 
-                  onRate={(rating) => handleRatePost(post.id, rating)}
+                  onRate={(rating) => handleRatePost(post.id, rating)} 
+                  // הסרנו את ה-onDelete ו-showDeleteButton כדי למנוע מחיקת פוסטים מדף הגלריה
                 />
               ))}
             </div>

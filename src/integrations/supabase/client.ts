@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -84,20 +85,32 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // First, attempt to delete directly with RETURNING to ensure the operation completes
-    const { error } = await supabase
+    // מחיקת הפוסט באופן מפורש עם await ושימוש ב-count כדי לוודא שהמחיקה הושלמה
+    const { count, error } = await supabase
       .from('qc_posts')
       .delete()
       .eq('id', postId)
-      .select(); // Use select() to ensure operation completes
+      .select('id', { count: 'exact', head: true });
       
     if (error) {
       console.error(`Database error when deleting post ${postId}:`, error);
       throw error;
     }
     
-    // Log success and return
-    console.log(`Successfully deleted post with ID: ${postId}`);
+    // וידוא שהמחיקה אכן בוצעה על ידי בדיקה ישירה של הפוסט
+    const { data: checkData } = await supabase
+      .from('qc_posts')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+      
+    if (checkData) {
+      console.error(`Post ${postId} still exists after deletion attempt`);
+      throw new Error('Post was not deleted successfully - it still exists in the database');
+    }
+    
+    // לוג הצלחה וחזרה
+    console.log(`Successfully deleted post with ID: ${postId}`, { count });
     return { success: true, error: null };
   } catch (error) {
     console.error(`Error deleting post ${postId}:`, error);
