@@ -169,6 +169,9 @@ const Admin = () => {
           toast.success("נמחק בהצלחה", {
             description: "הפוסט נמחק בהצלחה ממסד הנתונים",
           });
+          
+          // Ensure data is reloaded from server after successful deletion
+          await loadQCPosts();
         } else {
           // Roll back to original state if there was an error
           setQcPosts(originalPosts);
@@ -177,10 +180,11 @@ const Admin = () => {
       } catch (error: any) {
         console.error('Error with deletion:', error);
         toast.error(`מחיקה נכשלה: ${error.message || "אירעה שגיאה בתהליך המחיקה"}`);
-      } finally {
-        setDeletingId(null);
+        
         // Always reload data from server to ensure our UI is in sync with database state
         await loadQCPosts();
+      } finally {
+        setDeletingId(null);
       }
     }
   };

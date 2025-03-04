@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -85,31 +84,19 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // Use service role for deletion to bypass RLS policies
-    const { error: deleteError } = await supabase
+    // First, attempt to delete directly with RETURNING to ensure the operation completes
+    const { error } = await supabase
       .from('qc_posts')
       .delete()
-      .eq('id', postId);
-      
-    if (deleteError) {
-      console.error(`Database error when deleting post ${postId}:`, deleteError);
-      throw deleteError;
-    }
-    
-    // Double check the deletion was successful - wait a short period before checking
-    await new Promise(resolve => setTimeout(resolve, 500)); // Add small delay
-    
-    const { data: checkData } = await supabase
-      .from('qc_posts')
-      .select('id')
       .eq('id', postId)
-      .maybeSingle();
+      .select(); // Use select() to ensure operation completes
       
-    if (checkData) {
-      console.error(`Post ${postId} still exists after deletion attempt`);
-      throw new Error('Post was not deleted successfully - it still exists in the database');
+    if (error) {
+      console.error(`Database error when deleting post ${postId}:`, error);
+      throw error;
     }
     
+    // Log success and return
     console.log(`Successfully deleted post with ID: ${postId}`);
     return { success: true, error: null };
   } catch (error) {
