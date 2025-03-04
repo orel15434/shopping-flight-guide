@@ -25,7 +25,7 @@ const ChineseMarketplaceSearch = () => {
   const [translatedQuery, setTranslatedQuery] = useState("");
   const { toast } = useToast();
 
-  // Simple translation mapping for common terms
+  // Enhanced translation mapping for common terms
   const mockTranslate = (text: string): string => {
     const translations: Record<string, string> = {
       "nike air force 1": "耐克空军1号",
@@ -38,14 +38,36 @@ const ChineseMarketplaceSearch = () => {
       "adidas": "阿迪达斯",
       "shoes": "鞋子",
       "sneakers": "运动鞋",
-      "jordan": "乔丹"
+      "jordan": "乔丹",
+      "shirt": "衬衫",
+      "t-shirt": "T恤",
+      "jacket": "夹克",
+      "jeans": "牛仔裤",
+      "pants": "裤子",
+      "hoodie": "连帽衫",
+      "sweater": "毛衣",
+      "dress": "连衣裙",
+      "skirt": "裙子",
+      "bag": "包包",
+      "backpack": "背包",
+      "hat": "帽子",
+      "cap": "鸭舌帽",
+      "socks": "袜子",
+      "watch": "手表",
+      "sunglasses": "太阳镜",
+      "glasses": "眼镜",
+      "boots": "靴子",
+      "sandals": "凉鞋",
+      "men": "男士",
+      "women": "女士",
+      "kids": "儿童"
     };
 
     // Split text into words and check each word for translation
     const words = text.toLowerCase().split(" ");
     const translatedWords = words.map(word => translations[word] || word);
     
-    // Also check for full phrase match
+    // Check for full phrase match
     if (translations[text.toLowerCase()]) {
       return translations[text.toLowerCase()];
     }
@@ -57,8 +79,34 @@ const ChineseMarketplaceSearch = () => {
       }
     }
 
-    // Default to the full translated words
+    // Return the full translated words
     return translatedWords.join(" ") + " (翻译)";
+  };
+
+  // Function to translate text using LibreTranslate
+  const translateWithLibreTranslate = async (text: string): Promise<string> => {
+    try {
+      const response = await axios.post('https://libretranslate.de/translate', {
+        q: text,
+        source: 'auto', // Detect language automatically
+        target: 'zh',  // Translate to Chinese
+        format: 'text'
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.data && response.data.translatedText) {
+        return response.data.translatedText;
+      } else {
+        console.error('Translation error: Invalid response from LibreTranslate');
+        return mockTranslate(text); // Fallback to mockTranslate
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+      return mockTranslate(text); // Fallback to mockTranslate on error
+    }
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -74,83 +122,103 @@ const ChineseMarketplaceSearch = () => {
     }
 
     setLoading(true);
+    setResults([]);
     
     try {
-      // Simulate translation
-      const translated = mockTranslate(query);
+      // Try to translate with LibreTranslate first
+      let translated = "";
+      try {
+        translated = await translateWithLibreTranslate(query);
+        console.log(`LibreTranslate: "${query}" → "${translated}"`);
+      } catch (translationError) {
+        console.error("LibreTranslate failed:", translationError);
+        translated = mockTranslate(query);
+        console.log(`Fallback translation: "${query}" → "${translated}"`);
+      }
+      
       setTranslatedQuery(translated);
       
       // Google Custom Search API credentials
       const GOOGLE_API_KEY = 'AIzaSyA6xA8dr2RNKQE2Li5fRIBkjgR6SmZyByk';
       const SEARCH_ENGINE_ID = '94549664e44b34ac8';
       
-      // Add site restriction to the query - restrict to Chinese marketplaces
-      const restrictedQuery = `${query} site:weidian.com OR site:1688.com OR site:taobao.com`;
+      // Search sites separately to ensure balanced results
+      const sites = ['weidian.com', '1688.com', 'taobao.com'];
+      let allResults: SearchResult[] = [];
       
-      // Make API request
-      const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
-        params: {
-          key: GOOGLE_API_KEY,
-          cx: SEARCH_ENGINE_ID,
-          q: restrictedQuery,
-          num: 10 // Number of results to return
+      for (const site of sites) {
+        try {
+          // Create a query with site restriction
+          const siteQuery = `${translated} site:${site}`;
+          
+          // Make API request for this site
+          const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
+            params: {
+              key: GOOGLE_API_KEY,
+              cx: SEARCH_ENGINE_ID,
+              q: siteQuery,
+              num: 4 // Limit to 4 results per site
+            }
+          });
+          
+          // Process results for this site
+          if (response.data.items && response.data.items.length > 0) {
+            const siteResults: SearchResult[] = response.data.items.map((item: any) => {
+              // Determine which site this result is from
+              let siteName = site.split('.')[0].charAt(0).toUpperCase() + site.split('.')[0].slice(1);
+              
+              // Extract price - try to find it in the snippet or title
+              let price = "N/A";
+              // Improved price regex that matches various formats of Chinese currency
+              const priceRegex = /¥\s*\d+(\.\d+)?|\d+(\.\d+)?\s*元|\d+(\.\d+)?\s*¥/;
+              const priceMatch = item.snippet?.match(priceRegex) || item.title?.match(priceRegex);
+              
+              if (priceMatch) {
+                price = priceMatch[0];
+              }
+              
+              return {
+                name: item.title || "No title",
+                price: price,
+                currency: price !== "N/A" ? "" : "¥", // Currency already included in price if found
+                link: item.link,
+                image: item.pagemap?.cse_image?.[0]?.src || 
+                      item.pagemap?.cse_thumbnail?.[0]?.src || 
+                      `https://via.placeholder.com/300x300?text=${encodeURIComponent(siteName)}`,
+                site: siteName,
+                snippet: item.snippet
+              };
+            });
+            
+            allResults = [...allResults, ...siteResults];
+          }
+        } catch (siteError) {
+          console.error(`Error searching ${site}:`, siteError);
         }
+      }
+      
+      // Sort by price (if available)
+      const sortedResults = allResults.sort((a, b) => {
+        // Extract numeric price value
+        const getNumericPrice = (priceStr: string) => {
+          const match = priceStr.match(/\d+(\.\d+)?/);
+          return match ? parseFloat(match[0]) : Infinity;
+        };
+        
+        const priceA = getNumericPrice(a.price);
+        const priceB = getNumericPrice(b.price);
+        
+        return priceA - priceB;
       });
       
-      // Process results
-      if (response.data.items && response.data.items.length > 0) {
-        const searchResults: SearchResult[] = response.data.items.map((item: any) => {
-          // Determine which site this result is from
-          let site = "Unknown";
-          if (item.link.includes("weidian.com")) site = "Weidian";
-          else if (item.link.includes("1688.com")) site = "1688";
-          else if (item.link.includes("taobao.com")) site = "Taobao";
-          
-          // Extract price - try to find it in the snippet or title
-          let price = "N/A";
-          // Improved price regex that matches various formats of Chinese currency
-          const priceRegex = /¥\s*\d+(\.\d+)?|\d+(\.\d+)?\s*元|\d+(\.\d+)?\s*¥/;
-          const priceMatch = item.snippet?.match(priceRegex) || item.title?.match(priceRegex);
-          
-          if (priceMatch) {
-            price = priceMatch[0];
-          }
-          
-          return {
-            name: item.title || "No title",
-            price: price,
-            currency: price !== "N/A" ? "" : "¥", // Currency already included in price if found
-            link: item.link,
-            image: item.pagemap?.cse_image?.[0]?.src || 
-                  item.pagemap?.cse_thumbnail?.[0]?.src || 
-                  `https://via.placeholder.com/300x300?text=${encodeURIComponent(site)}`,
-            site,
-            snippet: item.snippet
-          };
-        });
-        
-        // Sort by price (if available)
-        const sortedResults = searchResults.sort((a, b) => {
-          // Extract numeric price value
-          const getNumericPrice = (priceStr: string) => {
-            const match = priceStr.match(/\d+(\.\d+)?/);
-            return match ? parseFloat(match[0]) : Infinity;
-          };
-          
-          const priceA = getNumericPrice(a.price);
-          const priceB = getNumericPrice(b.price);
-          
-          return priceA - priceB;
-        });
-        
-        setResults(sortedResults);
-        
+      setResults(sortedResults);
+      
+      if (sortedResults.length > 0) {
         toast({
           title: "החיפוש הושלם",
           description: `נמצאו ${sortedResults.length} תוצאות`,
         });
       } else {
-        setResults([]);
         toast({
           title: "אין תוצאות",
           description: "לא נמצאו תוצאות עבור חיפוש זה",
