@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -66,7 +67,8 @@ const QCGallery = () => {
           created_at: post.created_at,
           price: typeof post.price === 'number' ? post.price : undefined,
           weight: typeof post.weight === 'number' ? post.weight : undefined,
-          category: post.category || 'other'
+          category: post.category || 'other',
+          notes: post.notes ? post.notes as string[] : undefined
         }));
         
         setPosts(formattedPosts);
@@ -136,7 +138,8 @@ const QCGallery = () => {
           created_at: data.created_at,
           price: data.price,
           weight: data.weight,
-          notes: data.notes || []
+          // Handle notes from the database response
+          notes: Array.isArray(data.notes) ? data.notes : []
         };
         
         setPosts([formattedPost, ...posts]);
