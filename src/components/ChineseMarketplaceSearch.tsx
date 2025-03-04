@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, ExternalLink, Search } from "lucide-react";
+import { Loader2, ExternalLink, Search, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
@@ -15,6 +15,7 @@ interface SearchResult {
   link: string;
   image: string;
   site: string;
+  snippet?: string;
 }
 
 const ChineseMarketplaceSearch = () => {
@@ -31,11 +32,33 @@ const ChineseMarketplaceSearch = () => {
       "adidas yeezy": "阿迪达斯椰子",
       "jordan 1": "乔丹1代",
       "puma": "彪马",
-      "new balance": "新百伦"
+      "new balance": "新百伦",
+      "yeezy": "椰子",
+      "nike": "耐克",
+      "adidas": "阿迪达斯",
+      "shoes": "鞋子",
+      "sneakers": "运动鞋",
+      "jordan": "乔丹"
     };
 
-    // Default translation if no match found
-    return translations[text.toLowerCase()] || `${text} (翻译)`;
+    // Split text into words and check each word for translation
+    const words = text.toLowerCase().split(" ");
+    const translatedWords = words.map(word => translations[word] || word);
+    
+    // Also check for full phrase match
+    if (translations[text.toLowerCase()]) {
+      return translations[text.toLowerCase()];
+    }
+    
+    // Try to match partial phrases
+    for (const key in translations) {
+      if (text.toLowerCase().includes(key)) {
+        return text.toLowerCase().replace(key, translations[key]);
+      }
+    }
+
+    // Default to the full translated words
+    return translatedWords.join(" ") + " (翻译)";
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -61,7 +84,7 @@ const ChineseMarketplaceSearch = () => {
       const GOOGLE_API_KEY = 'AIzaSyA6xA8dr2RNKQE2Li5fRIBkjgR6SmZyByk';
       const SEARCH_ENGINE_ID = '94549664e44b34ac8';
       
-      // Add site restriction to the query
+      // Add site restriction to the query - restrict to Chinese marketplaces
       const restrictedQuery = `${query} site:weidian.com OR site:1688.com OR site:taobao.com`;
       
       // Make API request
@@ -85,7 +108,8 @@ const ChineseMarketplaceSearch = () => {
           
           // Extract price - try to find it in the snippet or title
           let price = "N/A";
-          const priceRegex = /¥\s*\d+(\.\d+)?|\d+(\.\d+)?\s*元/;
+          // Improved price regex that matches various formats of Chinese currency
+          const priceRegex = /¥\s*\d+(\.\d+)?|\d+(\.\d+)?\s*元|\d+(\.\d+)?\s*¥/;
           const priceMatch = item.snippet?.match(priceRegex) || item.title?.match(priceRegex);
           
           if (priceMatch) {
@@ -100,7 +124,8 @@ const ChineseMarketplaceSearch = () => {
             image: item.pagemap?.cse_image?.[0]?.src || 
                   item.pagemap?.cse_thumbnail?.[0]?.src || 
                   `https://via.placeholder.com/300x300?text=${encodeURIComponent(site)}`,
-            site
+            site,
+            snippet: item.snippet
           };
         });
         
@@ -191,44 +216,67 @@ const ChineseMarketplaceSearch = () => {
       )}
 
       {results.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold" dir="rtl">תוצאות חיפוש ({results.length})</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {results.map((item, index) => (
-              <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="aspect-square overflow-hidden bg-slate-100">
-                  <img 
-                    src={item.image} 
-                    alt={item.name} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/placeholder.svg";
-                    }}
-                  />
-                </div>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <span className="text-xs font-semibold px-2 py-1 bg-slate-200 rounded">
-                      {item.site}
-                    </span>
-                    <p className="text-lg font-bold text-primary">
+        <>
+          <div className="bg-amber-50 border-amber-200 border p-4 rounded-md" dir="rtl">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 ml-2 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-amber-800">הערה חשובה למשתמשים</h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  המחירים והתמונות המוצגים כאן עשויים להיות שונים מאלה המופיעים בדף המוצר. 
+                  מומלץ לבדוק את המחיר והתמונה בדף המוצר עצמו לפני קבלת החלטה.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold" dir="rtl">תוצאות חיפוש ({results.length})</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {results.map((item, index) => (
+                <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="aspect-square overflow-hidden bg-slate-100 relative">
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder.svg";
+                      }}
+                    />
+                    <div className="absolute top-2 right-2">
+                      <span className="text-xs font-semibold px-2 py-1 bg-slate-200 rounded-full">
+                        {item.site}
+                      </span>
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="text-md font-semibold mt-1 text-right line-clamp-2" dir="rtl">{item.name}</h3>
+                    
+                    <p className="text-lg font-bold text-primary mt-2 text-right" dir="rtl">
                       {formatPrice(item.price, item.currency)}
                     </p>
-                  </div>
-                  <h3 className="text-md font-semibold mt-3 text-right" dir="rtl">{item.name}</h3>
-                  <div className="mt-4">
-                    <Button variant="outline" className="w-full" asChild>
-                      <a href={item.link} target="_blank" rel="noopener noreferrer">
-                        צפה במוצר <ExternalLink className="ml-2 h-4 w-4" />
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    
+                    {item.snippet && (
+                      <p className="text-xs text-gray-500 mt-2 text-right line-clamp-3" dir="rtl">
+                        {item.snippet}
+                      </p>
+                    )}
+                    
+                    <div className="mt-4">
+                      <Button variant="outline" className="w-full" asChild>
+                        <a href={item.link} target="_blank" rel="noopener noreferrer">
+                          צפה במוצר <ExternalLink className="ml-2 h-4 w-4" />
+                        </a>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {!loading && results.length === 0 && translatedQuery && (

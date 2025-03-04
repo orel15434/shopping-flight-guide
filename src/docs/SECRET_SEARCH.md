@@ -33,14 +33,23 @@ The current implementation uses:
 - Direct API calls to Google Custom Search have quota limits (100 queries per day for free tier)
 - Price extraction may not always be accurate as it depends on how prices appear in search snippets
 - Translation is currently limited to a few predefined terms
+- Images and links may not always match the exact product
+- CORS restrictions prevent implementing direct web scraping from the frontend
 
-### Future Implementation
+### Known Issues
+
+1. **Price Inconsistency**: Prices shown in search results may differ from actual prices on product pages
+2. **Missing Prices**: Some products may show "מחיר לא זמין" (price not available)
+3. **Link Accuracy**: Links may lead to store pages instead of specific product pages
+4. **Image Matching**: Images may not always match the actual product
+
+## Future Implementation
 
 To fully enhance this feature, you would need:
 
 1. **Backend API**: Create a server-side API that handles:
    - Proxying requests to Google Custom Search API
-   - More sophisticated price and data extraction
+   - Web scraping for accurate price, image, and link extraction
    - Proper translation services
 
 2. **Translation Service**: Integrate with a translation API like Google Translate to convert:
@@ -53,7 +62,7 @@ To fully enhance this feature, you would need:
 
 ## Technical Limitations
 
-- **CORS Restrictions**: The Google Custom Search API may be subject to CORS restrictions when called directly from browser
+- **CORS Restrictions**: The Google Custom Search API can be called from the frontend, but web scraping cannot due to CORS restrictions
 - **API Rate Limits**: Google Custom Search API has quotas (100 requests/day on free tier)
 - **Data Accuracy**: Data extraction from search results is limited without full page scraping
 
@@ -63,3 +72,4 @@ To fully enhance this feature, you would need:
 2. Integrate with a reliable translation service
 3. Improve price extraction and conversion
 4. Add filtering options (e.g., by marketplace, price range)
+5. Consider implementing a caching mechanism to reduce API calls
