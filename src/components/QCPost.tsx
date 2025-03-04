@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Star, ExternalLink, Trash2, DollarSign, Scale, X, Share2 } from 'lucide-react';
+import { Star, ExternalLink, Trash2, DollarSign, Scale, X, Share2, Copy } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import he from 'date-fns/locale/he';
@@ -112,22 +112,25 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
 
   const agentInfo = agents.find(a => a.id === post.agent);
   
-  const handleShare = () => {
+  const handleShare = async () => {
     const postUrl = `${window.location.origin}/qc-post/${post.id}`;
     
     if (navigator.share && isMobile) {
-      navigator.share({
-        title: post.title,
-        text: post.description,
-        url: postUrl,
-      })
-      .then(() => {
+      try {
+        await navigator.share({
+          title: post.title,
+          text: post.description || "תראו את ה-QC הזה! 📸",
+          url: postUrl,
+        });
         console.log('Successfully shared');
-      })
-      .catch((error) => {
+        toast({
+          description: "הפוסט שותף בהצלחה!",
+          variant: "default",
+        });
+      } catch (error) {
         console.error('Error sharing:', error);
         copyToClipboard(postUrl);
-      });
+      }
     } else {
       copyToClipboard(postUrl);
     }
@@ -152,6 +155,7 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
           description: "לא הצלחנו להעתיק את הקישור",
           variant: "destructive",
         });
+        prompt("העתק את הקישור באופן ידני:", text);
       });
   };
   
@@ -296,8 +300,12 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
               onClick={handleShare}
               className="relative group"
             >
-              <Share2 size={16} />
-              <span>שתף</span>
+              {isMobile ? (
+                <Share2 size={16} />
+              ) : (
+                <Copy size={16} />
+              )}
+              <span>{isMobile ? "שתף" : "העתק קישור"}</span>
               {showShareTooltip && (
                 <div className="absolute top-[-40px] left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-3 py-1 rounded">
                   הועתק ללוח!
