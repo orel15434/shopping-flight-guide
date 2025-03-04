@@ -12,43 +12,54 @@ No password protection is implemented. The page is only hidden from navigation b
 ## Features
 
 - Search for products on Chinese marketplaces (Weidian, 1688, Taobao)
-- Translate search queries to Chinese
-- Display results sorted by price (lowest to highest)
+- Display results from Google Custom Search API
+- Sort results by price (lowest to highest when available)
+- Show approximate price conversion to ILS (Israeli Shekel)
 
 ## Implementation Notes
 
 ### Current Implementation
 
-The current implementation is a prototype that simulates:
-- Query translation to Chinese
-- Search results from Chinese marketplaces
-- Price conversion
+The current implementation uses:
+- Google Custom Search API with the following credentials:
+  - API Key: AIzaSyA6xA8dr2RNKQE2Li5fRIBkjgR6SmZyByk
+  - Search Engine ID: 94549664e44b34ac8
+- Site-restricted searches to weidian.com, 1688.com, and taobao.com
+- Basic price extraction from search results
+- Simple translation mapping for common product terms
+
+### Limitations
+
+- Direct API calls to Google Custom Search have quota limits (100 queries per day for free tier)
+- Price extraction may not always be accurate as it depends on how prices appear in search snippets
+- Translation is currently limited to a few predefined terms
 
 ### Future Implementation
 
-To fully implement this feature, you would need:
+To fully enhance this feature, you would need:
 
 1. **Backend API**: Create a server-side API that handles:
-   - Web scraping of Chinese marketplaces
-   - Translation services
-   - Result filtering and sorting
+   - Proxying requests to Google Custom Search API
+   - More sophisticated price and data extraction
+   - Proper translation services
 
 2. **Translation Service**: Integrate with a translation API like Google Translate to convert:
    - Hebrew/English queries to Chinese
    - Chinese product names back to Hebrew/English
 
-3. **Web Scraping**: Implement server-side scraping using tools like:
+3. **Web Scraping**: For more accurate results, implement server-side scraping using tools like:
    - Puppeteer or Playwright for browser automation
    - Proxy services to avoid IP bans from the Chinese marketplaces
 
 ## Technical Limitations
 
-- **CORS Restrictions**: Direct scraping from browser is not possible due to CORS policies
-- **API Rate Limits**: Translation and scraping services may have usage limits
-- **Website Changes**: Marketplace websites may change their structure, breaking scraping logic
+- **CORS Restrictions**: The Google Custom Search API may be subject to CORS restrictions when called directly from browser
+- **API Rate Limits**: Google Custom Search API has quotas (100 requests/day on free tier)
+- **Data Accuracy**: Data extraction from search results is limited without full page scraping
 
 ## Next Steps
 
-1. Implement a proper backend service for web scraping
+1. Implement a proper backend service for web scraping and API proxying
 2. Integrate with a reliable translation service
-3. Improve error handling and loading states
+3. Improve price extraction and conversion
+4. Add filtering options (e.g., by marketplace, price range)

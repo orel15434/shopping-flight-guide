@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, ExternalLink, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 
 // Define type for search results
 interface SearchResult {
@@ -23,35 +24,8 @@ const ChineseMarketplaceSearch = () => {
   const [translatedQuery, setTranslatedQuery] = useState("");
   const { toast } = useToast();
 
-  const mockResults = (query: string): SearchResult[] => {
-    // This is a mock function that simulates search results
-    // In a real implementation, this would call a backend API
-    
-    const sites = ["Weidian", "1688", "Taobao"];
-    const mockData: SearchResult[] = [];
-    
-    // Generate mock results
-    for (let i = 0; i < 12; i++) {
-      const randomPrice = Math.floor(50 + Math.random() * 200);
-      const site = sites[i % sites.length];
-      
-      mockData.push({
-        name: `${query} - ${site} מוצר ${i + 1}`,
-        price: randomPrice.toString(),
-        currency: "¥",
-        link: "https://example.com/product",
-        image: `https://picsum.photos/seed/${query}${i}/300/300`,
-        site
-      });
-    }
-    
-    // Sort by price
-    return mockData.sort((a, b) => parseInt(a.price) - parseInt(b.price));
-  };
-
+  // Simple translation mapping for common terms
   const mockTranslate = (text: string): string => {
-    // This is a mock function that simulates translation
-    // In a real implementation, this would call a translation API
     const translations: Record<string, string> = {
       "nike air force 1": "耐克空军1号",
       "adidas yeezy": "阿迪达斯椰子",
@@ -83,20 +57,80 @@ const ChineseMarketplaceSearch = () => {
       const translated = mockTranslate(query);
       setTranslatedQuery(translated);
       
-      // In a real implementation, this would call a backend API
-      // that handles web scraping and translation
+      // Google Custom Search API credentials
+      const GOOGLE_API_KEY = 'AIzaSyA6xA8dr2RNKQE2Li5fRIBkjgR6SmZyByk';
+      const SEARCH_ENGINE_ID = '94549664e44b34ac8';
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Add site restriction to the query
+      const restrictedQuery = `${query} site:weidian.com OR site:1688.com OR site:taobao.com`;
       
-      // Get mock results
-      const searchResults = mockResults(query);
-      setResults(searchResults);
-      
-      toast({
-        title: "החיפוש הושלם",
-        description: `נמצאו ${searchResults.length} תוצאות`,
+      // Make API request
+      const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
+        params: {
+          key: GOOGLE_API_KEY,
+          cx: SEARCH_ENGINE_ID,
+          q: restrictedQuery,
+          num: 10 // Number of results to return
+        }
       });
+      
+      // Process results
+      if (response.data.items && response.data.items.length > 0) {
+        const searchResults: SearchResult[] = response.data.items.map((item: any) => {
+          // Determine which site this result is from
+          let site = "Unknown";
+          if (item.link.includes("weidian.com")) site = "Weidian";
+          else if (item.link.includes("1688.com")) site = "1688";
+          else if (item.link.includes("taobao.com")) site = "Taobao";
+          
+          // Extract price - try to find it in the snippet or title
+          let price = "N/A";
+          const priceRegex = /¥\s*\d+(\.\d+)?|\d+(\.\d+)?\s*元/;
+          const priceMatch = item.snippet?.match(priceRegex) || item.title?.match(priceRegex);
+          
+          if (priceMatch) {
+            price = priceMatch[0];
+          }
+          
+          return {
+            name: item.title || "No title",
+            price: price,
+            currency: price !== "N/A" ? "" : "¥", // Currency already included in price if found
+            link: item.link,
+            image: item.pagemap?.cse_image?.[0]?.src || 
+                  item.pagemap?.cse_thumbnail?.[0]?.src || 
+                  `https://via.placeholder.com/300x300?text=${encodeURIComponent(site)}`,
+            site
+          };
+        });
+        
+        // Sort by price (if available)
+        const sortedResults = searchResults.sort((a, b) => {
+          // Extract numeric price value
+          const getNumericPrice = (priceStr: string) => {
+            const match = priceStr.match(/\d+(\.\d+)?/);
+            return match ? parseFloat(match[0]) : Infinity;
+          };
+          
+          const priceA = getNumericPrice(a.price);
+          const priceB = getNumericPrice(b.price);
+          
+          return priceA - priceB;
+        });
+        
+        setResults(sortedResults);
+        
+        toast({
+          title: "החיפוש הושלם",
+          description: `נמצאו ${sortedResults.length} תוצאות`,
+        });
+      } else {
+        setResults([]);
+        toast({
+          title: "אין תוצאות",
+          description: "לא נמצאו תוצאות עבור חיפוש זה",
+        });
+      }
     } catch (error) {
       console.error("Search error:", error);
       toast({
@@ -110,6 +144,15 @@ const ChineseMarketplaceSearch = () => {
   };
 
   const formatPrice = (price: string, currency: string) => {
+    if (price === "N/A") return "מחיר לא זמין";
+    
+    // If the price already includes the currency symbol
+    if (price.includes("¥") || price.includes("元")) {
+      // Estimate conversion to ILS (0.5 rate)
+      const numericPrice = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
+      return `${price} (≈${Math.round(numericPrice * 0.5)} ₪)`;
+    }
+    
     return `${currency}${price} (≈${Math.round(parseInt(price) * 0.5)} ₪)`;
   };
 
