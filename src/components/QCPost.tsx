@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Star, ExternalLink, Trash2, DollarSign, Scale, X, Share2, Copy } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -8,7 +9,7 @@ import { supabase } from '../integrations/supabase/client';
 import { useToast } from '../hooks/use-toast';
 import { Button } from './ui/button';
 import { InteractiveHoverButton } from './ui/interactive-hover-button';
-import { Dialog, DialogContent } from './ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
 import { useIsMobile } from '../hooks/use-mobile';
 
 export interface QCPostType {
@@ -349,6 +350,7 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-none">
+          <DialogTitle className="sr-only">{post.title}</DialogTitle>
           <div className="relative bg-black/90 rounded-lg overflow-hidden flex flex-col">
             <div className="absolute top-2 right-2 z-10">
               <Button 

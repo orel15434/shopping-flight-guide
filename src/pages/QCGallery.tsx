@@ -98,7 +98,8 @@ const QCGallery = () => {
         votes: 0,
         user_ratings: {},
         price: post.price,
-        weight: post.weight
+        weight: post.weight,
+        notes: post.notes
       };
       
       console.log('Prepared post for insertion:', newPost);
@@ -134,7 +135,8 @@ const QCGallery = () => {
             ) : {},
           created_at: data.created_at,
           price: data.price,
-          weight: data.weight
+          weight: data.weight,
+          notes: data.notes || []
         };
         
         setPosts([formattedPost, ...posts]);

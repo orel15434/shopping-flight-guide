@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { nanoid } from 'nanoid';
 import { Button } from './ui/button';
@@ -199,6 +200,7 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         
         const slug = createSlug(title);
         
+        // Filter out empty notes
         const filteredNotes = notes.filter(note => note.trim() !== '');
         
         const newPost: QCPostType = {
@@ -387,7 +389,7 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
               <Textarea
                 value={note}
                 onChange={(e) => handleNoteChange(index, e.target.value)}
-                placeholder={index < 2 ? NOTE_PLACEHOLDER : "הוסף הערה אישית..."}
+                placeholder={index < 2 ? "לדוגמה פריט עבה, פריט דק, לקחת מידה מעל, לקיחת מידה מתחת." : "הוסף הערה אישית..."}
                 className="min-h-[60px]"
               />
               {notes.length > 1 && (
