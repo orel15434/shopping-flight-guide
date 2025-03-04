@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { Button } from './ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
-import { ImagePlus, Trash2, Check, Loader2, DollarSign, Scale } from 'lucide-react';
+import { ImagePlus, Trash2, Check, Loader2, DollarSign, Scale, Plus, X } from 'lucide-react';
 import { QCPostType } from './QCPost';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from '../hooks/use-toast';
@@ -29,6 +29,8 @@ const PRODUCT_CATEGORIES = [
   { id: 'other', name: 'אחר' }
 ];
 
+const NOTE_PLACEHOLDER = "לדוגמה פריט עבה, פריט דק, לקחת מידה מעל, לקיחת מידה מתחת.";
+
 const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -41,6 +43,7 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [notes, setNotes] = useState<string[]>(['', '']);
   const { toast } = useToast();
 
   const isValidProductLink = (link: string): boolean => {
@@ -129,6 +132,24 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     }
   };
 
+  const handleNoteChange = (index: number, value: string) => {
+    const updatedNotes = [...notes];
+    updatedNotes[index] = value;
+    setNotes(updatedNotes);
+  };
+
+  const addNote = () => {
+    if (notes.length < 5) {
+      setNotes([...notes, '']);
+    }
+  };
+
+  const removeNote = (index: number) => {
+    const updatedNotes = [...notes];
+    updatedNotes.splice(index, 1);
+    setNotes(updatedNotes);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -178,6 +199,8 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         
         const slug = createSlug(title);
         
+        const filteredNotes = notes.filter(note => note.trim() !== '');
+        
         const newPost: QCPostType = {
           id: nanoid(),
           title,
@@ -192,7 +215,8 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
           userRatings: {},
           price: price,
           weight: weight,
-          slug: slug
+          slug: slug,
+          notes: filteredNotes.length > 0 ? filteredNotes : undefined
         };
         
         onSubmit(newPost);
@@ -350,6 +374,49 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         </div>
         
         {errors.images && <p className="mt-1 text-sm text-red-500">{errors.images}</p>}
+      </div>
+      
+      <div>
+        <label className="block mb-2 font-medium">
+          הערות אישיות <span className="text-xs text-muted-foreground">(אופציונלי)</span>
+        </label>
+        
+        <div className="space-y-3">
+          {notes.map((note, index) => (
+            <div key={index} className="flex items-start gap-2">
+              <Textarea
+                value={note}
+                onChange={(e) => handleNoteChange(index, e.target.value)}
+                placeholder={index < 2 ? NOTE_PLACEHOLDER : "הוסף הערה אישית..."}
+                className="min-h-[60px]"
+              />
+              {notes.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeNote(index)}
+                  className="mt-1"
+                >
+                  <X size={18} />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {notes.length < 5 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addNote}
+            className="mt-2 flex items-center gap-1"
+          >
+            <Plus size={16} />
+            <span>הוסף הערה נוספת</span>
+          </Button>
+        )}
       </div>
       
       {isSubmitting && uploadProgress > 0 && (

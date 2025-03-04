@@ -29,6 +29,7 @@ export interface QCPostType {
   weight?: number; // המשקל בגרמים
   category?: string; // קטגוריית המוצר
   slug?: string; // URL-friendly slug
+  notes?: string[]; // הערות אישיות
 }
 
 interface QCPostProps {
@@ -265,6 +266,23 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
           </div>
           
           <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{post.description}</p>
+          
+          {post.notes && post.notes.length > 0 && (
+            <div className="mb-4 space-y-2">
+              {post.notes.map((note, index) => (
+                <div 
+                  key={index} 
+                  className="px-3 py-2 rounded-lg text-white text-sm"
+                  style={{ 
+                    background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  {note}
+                </div>
+              ))}
+            </div>
+          )}
           
           <div className="mb-4">
             <div className="flex items-center mb-1">
