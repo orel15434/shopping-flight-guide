@@ -99,6 +99,11 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
       whileHover: "hover"
     };
 
+    // On extra small screens, only show the active item and reduce the number of visible categories
+    const visibleItems = isExtraSmallScreen 
+      ? items.filter(item => item.id === 'all' || item.id === activeItem || item.id === 'clothing' || item.id === 'electronics')
+      : items;
+
     return (
       <motion.nav
         ref={ref}
@@ -106,7 +111,7 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
           "p-2 rounded-2xl bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-lg border border-border/40 shadow-lg relative overflow-hidden",
           isMobile && "p-1.5", // Reduce padding more on mobile
           isVerySmallScreen && "p-1", // Even smaller padding on very small screens
-          isExtraSmallScreen && "p-0.5 max-w-[98%]", // Minimal padding on extra small screens and limit width
+          isExtraSmallScreen && "p-0.5 max-w-[95%]", // Minimal padding on extra small screens and limit width
           className,
         )}
         initial="initial"
@@ -122,7 +127,7 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
           isVerySmallScreen && "gap-0.5", // Further reduce gap on very small screens
           isExtraSmallScreen && "gap-0" // No gap on extra small screens
         )}>
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.id === activeItem;
             const iconColor = getIconColor(item.id);
@@ -163,7 +168,7 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                           : "text-muted-foreground group-hover:text-foreground",
                         isMobile && "px-2 py-1.5 text-sm gap-1.5", // Smaller padding and text on mobile
                         isVerySmallScreen && "px-1.5 py-1 text-xs gap-1", // Even smaller on very small screens
-                        isExtraSmallScreen && "px-0.5 py-0.5 gap-0.5" // Minimal on extra small screens
+                        isExtraSmallScreen && "px-0.5 py-0.5 gap-0.5 text-[10px]" // Minimal on extra small screens with smaller text
                       )}
                       variants={itemVariants}
                       transition={sharedTransition}
@@ -196,7 +201,7 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                           : "text-muted-foreground group-hover:text-foreground",
                         isMobile && "px-2 py-1.5 text-sm gap-1.5", // Smaller padding and text on mobile
                         isVerySmallScreen && "px-1.5 py-1 text-xs gap-1", // Even smaller on very small screens
-                        isExtraSmallScreen && "px-0.5 py-0.5 gap-0.5" // Minimal on extra small screens
+                        isExtraSmallScreen && "px-0.5 py-0.5 gap-0.5 text-[10px]" // Minimal on extra small screens with smaller text
                       )}
                       variants={backVariants}
                       transition={sharedTransition}
