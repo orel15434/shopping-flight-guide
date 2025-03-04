@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import QCGallery from "./pages/QCGallery";
 import QCPostDetail from "./pages/QCPostDetail";
 import Admin from "./pages/Admin";
+import SecretSearch from "./pages/SecretSearch";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/qc-gallery" element={<QCGallery />} />
           <Route path="/qc-post/:postId" element={<QCPostDetail />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/secret-search" element={<SecretSearch />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
