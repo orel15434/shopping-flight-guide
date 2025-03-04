@@ -7,14 +7,13 @@ This document outlines the implementation of the hidden search feature for Chine
 
 The secret search page is accessible at: `/secret-search`
 
-Password: `webuyil2024`
+No password protection is implemented. The page is only hidden from navigation but can be accessed directly via URL.
 
 ## Features
 
 - Search for products on Chinese marketplaces (Weidian, 1688, Taobao)
 - Translate search queries to Chinese
 - Display results sorted by price (lowest to highest)
-- Simple password protection
 
 ## Implementation Notes
 
@@ -42,10 +41,6 @@ To fully implement this feature, you would need:
    - Puppeteer or Playwright for browser automation
    - Proxy services to avoid IP bans from the Chinese marketplaces
 
-4. **Better Authentication**: Replace the simple password with:
-   - User authentication system
-   - Role-based access control
-
 ## Technical Limitations
 
 - **CORS Restrictions**: Direct scraping from browser is not possible due to CORS policies
@@ -56,5 +51,4 @@ To fully implement this feature, you would need:
 
 1. Implement a proper backend service for web scraping
 2. Integrate with a reliable translation service
-3. Add proper user authentication
-4. Improve error handling and loading states
+3. Improve error handling and loading states
