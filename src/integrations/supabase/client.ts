@@ -85,12 +85,12 @@ export const deleteQCPost = async (postId: string) => {
       throw new Error('Invalid post ID provided');
     }
     
-    // מחיקת הפוסט באופן מפורש עם await ושימוש ב-count כדי לוודא שהמחיקה הושלמה
-    const { count, error } = await supabase
+    // Fix the select method to use the correct syntax
+    const { data, error } = await supabase
       .from('qc_posts')
       .delete()
       .eq('id', postId)
-      .select('id', { count: 'exact', head: true });
+      .select();
       
     if (error) {
       console.error(`Database error when deleting post ${postId}:`, error);
@@ -110,7 +110,7 @@ export const deleteQCPost = async (postId: string) => {
     }
     
     // לוג הצלחה וחזרה
-    console.log(`Successfully deleted post with ID: ${postId}`, { count });
+    console.log(`Successfully deleted post with ID: ${postId}`);
     return { success: true, error: null };
   } catch (error) {
     console.error(`Error deleting post ${postId}:`, error);
