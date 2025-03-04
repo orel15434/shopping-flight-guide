@@ -177,7 +177,7 @@ const QCGallery = () => {
         <div className="container">
           <div className="text-center mb-12">
             <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4 heading-gradient">
-              גלריית תמונות QC
+              3
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               כאן תוכלו לראות תמונות QC של מוצרים שקנו משתמשים אחרים, לקבל השראה ולשתף את התמונות שלכם.
