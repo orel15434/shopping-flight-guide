@@ -39,22 +39,11 @@ export const adminLogin = async (email: string, password: string) => {
   }
 };
 
-// פונקצית בדיקת חיבור
-export const getAdminSession = () => {
-  // נבדוק אם יש מידע בלוקל סטורג'
-  const isLoggedIn = localStorage.getItem('admin_logged_in');
-  if (isLoggedIn === 'true') {
-    return {
-      data: {
-        session: {
-          user: {
-            email: ADMIN_EMAIL
-          }
-        }
-      }
-    };
-  }
-  return { data: { session: null } };
+// פונקצית בדיקת חיבור - מעודכנת לבדיקת סשן אמיתי
+export const getAdminSession = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) console.error("Error getting session:", error);
+  return { data };
 };
 
 // פונקצית התנתקות
