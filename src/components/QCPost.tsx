@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Star, ExternalLink, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -8,6 +7,7 @@ import { agents } from '../pages/Index';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from '../hooks/use-toast';
 import { Button } from './ui/button';
+import { InteractiveHoverButton } from './ui/interactive-hover-button';
 
 export interface QCPostType {
   id: string;
@@ -38,7 +38,6 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
   const [hasRated, setHasRated] = useState(false);
   const { toast } = useToast();
   
-  // Badekit סוג אתר מהקישור
   const getProductSite = (url: string): string => {
     if (!url) return 'אתר חיצוני';
     if (url.includes('taobao.com')) return 'Taobao';
@@ -49,7 +48,6 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
     return 'אתר חיצוני';
   };
   
-  // For backward compatibility
   const productLink = post.product_link || post.productLink || '';
   const userRatings = post.user_ratings || post.userRatings || {};
   const timestamp = post.created_at || post.timestamp || new Date().toISOString();
@@ -57,10 +55,8 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
   const handleRate = async (rating: number) => {
     if (!hasRated) {
       try {
-        // First call the passed onRate function for UI update
         onRate(rating);
         
-        // Then update the database if available
         const { error } = await supabase
           .from('qc_posts')
           .update({
@@ -90,15 +86,12 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
     setCurrentImageIndex((prev) => (prev - 1 + post.images.length) % post.images.length);
   };
   
-  // הפוך את מחרוזת התאריך לאובייקט Date ואז לפורמט הדרוש עם תרגום לעברית
   const formattedDate = format(new Date(timestamp), 'dd בMMMM yyyy', { locale: he });
 
-  // מצא את מידע הסוכן המתאים
   const agentInfo = agents.find(a => a.id === post.agent);
   
   return (
     <div className="glass-card rounded-xl overflow-hidden hover:shadow-lg transition-shadow relative">
-      {/* Delete button if shown */}
       {showDeleteButton && onDelete && (
         <Button
           variant="destructive"
@@ -110,7 +103,6 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
         </Button>
       )}
       
-      {/* גלריית תמונות */}
       <div className="relative aspect-[4/3] bg-secondary/20 overflow-hidden">
         {post.images.length > 0 ? (
           <>
@@ -122,7 +114,6 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
             
             {post.images.length > 1 && (
               <>
-                {/* כפתורי ניווט בתמונות */}
                 <button 
                   onClick={prevImage}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center hover:bg-black/50 transition-colors"
@@ -136,7 +127,6 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
                   <span>‹</span>
                 </button>
                 
-                {/* אינדיקטור תמונות */}
                 <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
                   {post.images.map((_, index) => (
                     <span 
@@ -157,11 +147,9 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
         )}
       </div>
       
-      {/* תוכן הפוסט */}
       <div className="p-4">
         <h3 className="text-lg font-medium mb-2">{post.title}</h3>
         
-        {/* לוגו ושם הסוכן */}
         {agentInfo && (
           <div className="flex items-center mb-3 text-sm">
             <img 
@@ -175,7 +163,6 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
         
         <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{post.description}</p>
         
-        {/* דירוג כוכבים */}
         <div className="mb-4">
           <div className="flex items-center mb-1">
             <div className="flex items-center">
@@ -207,18 +194,17 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
           )}
         </div>
         
-        {/* קישור למוצר */}
-        <div className="flex justify-between items-center">
-          <a
+        <div className="mb-4">
+          <InteractiveHoverButton 
             href={productLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center text-primary text-sm hover:underline"
+            className="w-full"
           >
-            <ExternalLink size={14} className="ml-1" />
+            <ExternalLink size={16} />
             <span>קנה ב{getProductSite(productLink)}</span>
-          </a>
-          
+          </InteractiveHoverButton>
+        </div>
+        
+        <div className="flex justify-between items-center">
           <span className="text-xs text-muted-foreground">{formattedDate}</span>
         </div>
       </div>
