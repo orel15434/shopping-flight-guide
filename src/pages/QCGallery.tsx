@@ -8,7 +8,8 @@ import { Button } from '../components/ui/button';
 import { PlusCircle, X, Images, Shirt, ShoppingBag, Monitor } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { AnimatedCategoryBar } from '../components/ui/animated-category-bar';
-import { useIsMobile } from '../hooks/use-mobile';
+import { useIsMobile, useIsVerySmallScreen, useIsExtraSmallScreen } from '../hooks/use-mobile';
+import { cn } from '../lib/utils';
 
 const PRODUCT_CATEGORIES = [
   { id: 'all', name: 'הכל', icon: ShoppingBag },
@@ -26,6 +27,8 @@ const QCGallery = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const isVerySmallScreen = useIsVerySmallScreen();
+  const isExtraSmallScreen = useIsExtraSmallScreen();
 
   useEffect(() => {
     loadPosts();
@@ -180,7 +183,10 @@ const QCGallery = () => {
             </p>
           </div>
           
-          <div className="flex justify-center mb-8 px-2">
+          <div className={cn(
+            "flex justify-center mb-8",
+            isExtraSmallScreen ? "px-0.5" : isVerySmallScreen ? "px-1" : isMobile ? "px-1.5" : "px-2"
+          )}>
             <AnimatedCategoryBar 
               items={PRODUCT_CATEGORIES}
               activeItem={filter}

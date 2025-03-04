@@ -3,6 +3,8 @@ import * as React from "react"
 
 // Lowering the mobile breakpoint to better match actual mobile devices
 const MOBILE_BREAKPOINT = 640
+const VERY_SMALL_SCREEN_BREAKPOINT = 400
+const EXTRA_SMALL_SCREEN_BREAKPOINT = 360
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean>(false)
@@ -31,7 +33,7 @@ export function useIsVerySmallScreen() {
 
   React.useEffect(() => {
     const checkIfVerySmallScreen = () => {
-      setIsVerySmallScreen(window.innerWidth < 400)
+      setIsVerySmallScreen(window.innerWidth < VERY_SMALL_SCREEN_BREAKPOINT)
     }
     
     // Check initially
@@ -45,4 +47,26 @@ export function useIsVerySmallScreen() {
   }, [])
 
   return isVerySmallScreen
+}
+
+// Add a function to check if we're on an extra small screen
+export function useIsExtraSmallScreen() {
+  const [isExtraSmallScreen, setIsExtraSmallScreen] = React.useState<boolean>(false)
+
+  React.useEffect(() => {
+    const checkIfExtraSmallScreen = () => {
+      setIsExtraSmallScreen(window.innerWidth < EXTRA_SMALL_SCREEN_BREAKPOINT)
+    }
+    
+    // Check initially
+    checkIfExtraSmallScreen()
+    
+    // Add event listener for window resize
+    window.addEventListener("resize", checkIfExtraSmallScreen)
+    
+    // Clean up
+    return () => window.removeEventListener("resize", checkIfExtraSmallScreen)
+  }, [])
+
+  return isExtraSmallScreen
 }
