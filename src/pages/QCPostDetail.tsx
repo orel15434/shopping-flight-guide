@@ -63,7 +63,8 @@ const QCPostDetail = () => {
             price: typeof data.price === 'number' ? data.price : undefined,
             weight: typeof data.weight === 'number' ? data.weight : undefined,
             category: data.category || 'other',
-            slug: data.slug || ''
+            slug: data.slug || '',
+            notes: Array.isArray(data.notes) ? data.notes : []
           };
           
           setPost(formattedPost);
