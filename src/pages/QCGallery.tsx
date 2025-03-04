@@ -8,6 +8,7 @@ import AddQCPostForm from '../components/AddQCPostForm';
 import { Button } from '../components/ui/button';
 import { PlusCircle, X, Images, Shirt, ShoppingBag, Monitor } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { AnimatedCategoryBar } from '../components/ui/animated-category-bar';
 
 const PRODUCT_CATEGORIES = [
   { id: 'all', name: 'הכל', icon: ShoppingBag },
@@ -178,18 +179,13 @@ const QCGallery = () => {
             </p>
           </div>
           
-          <div className="flex flex-wrap justify-center gap-2 mb-8">
-            {PRODUCT_CATEGORIES.map(category => (
-              <Button 
-                key={category.id}
-                variant={filter === category.id ? 'default' : 'outline'} 
-                onClick={() => setFilter(category.id)}
-                className="px-4 py-2 rounded-full text-sm flex items-center gap-2"
-              >
-                <category.icon size={18} />
-                <span>{category.name}</span>
-              </Button>
-            ))}
+          <div className="flex justify-center mb-8">
+            <AnimatedCategoryBar 
+              items={PRODUCT_CATEGORIES}
+              activeItem={filter}
+              onItemClick={setFilter}
+              className="max-w-fit mx-auto"
+            />
           </div>
           
           {!isAddingPost && (
