@@ -185,7 +185,7 @@ const QCGallery = () => {
           
           <div className={cn(
             "flex justify-center mb-8",
-            isExtraSmallScreen ? "px-0.5" : isVerySmallScreen ? "px-1" : isMobile ? "px-1.5" : "px-2"
+            isExtraSmallScreen ? "px-0" : isVerySmallScreen ? "px-0.5" : isMobile ? "px-1" : "px-2"
           )}>
             <AnimatedCategoryBar 
               items={PRODUCT_CATEGORIES}
