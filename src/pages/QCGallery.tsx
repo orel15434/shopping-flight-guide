@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -29,7 +28,6 @@ const QCGallery = () => {
       if (error) throw error;
       
       if (data) {
-        // Convert the database response to QCPostType format
         const formattedPosts: QCPostType[] = data.map(post => ({
           id: post.id,
           title: post.title,
@@ -46,7 +44,8 @@ const QCGallery = () => {
             ) : {},
           created_at: post.created_at,
           price: typeof post.price === 'number' ? post.price : undefined,
-          weight: typeof post.weight === 'number' ? post.weight : undefined
+          weight: typeof post.weight === 'number' ? post.weight : undefined,
+          category: post.category || 'other'
         }));
         
         setPosts(formattedPosts);
@@ -67,13 +66,13 @@ const QCGallery = () => {
     try {
       console.log('Adding new post:', post);
       
-      // Prepare data for insertion
       const newPost = {
         title: post.title,
         description: post.description,
-        images: post.images, // These are now Supabase Storage URLs
+        images: post.images,
         product_link: post.productLink,
         agent: post.agent,
+        category: post.category || 'other',
         rating: 0,
         votes: 0,
         user_ratings: {},
@@ -96,7 +95,6 @@ const QCGallery = () => {
       
       console.log('Post added successfully:', data);
       
-      // Add the new post to the state with proper type conversion
       if (data) {
         const formattedPost: QCPostType = {
           id: data.id,
@@ -105,6 +103,7 @@ const QCGallery = () => {
           images: data.images || [],
           productLink: data.product_link || '',
           agent: data.agent,
+          category: data.category || 'other',
           rating: data.rating || 0,
           votes: data.votes || 0,
           userRatings: data.user_ratings ? 
@@ -138,8 +137,6 @@ const QCGallery = () => {
   const handleRatePost = async (postId: string, rating: number) => {
     setPosts(posts.map(post => {
       if (post.id === postId) {
-        // המתודה הזו היא פשוטה וזמנית. במערכת אמיתית עם התחברות,
-        // הדירוג יהיה קשור למשתמש מסוים ויישמר בבסיס נתונים
         const newVotes = post.votes + 1;
         const newRating = ((post.rating * post.votes) + rating) / newVotes;
         
@@ -172,7 +169,6 @@ const QCGallery = () => {
             </p>
           </div>
           
-          {/* סינון לפי סוכן */}
           <div className="flex flex-wrap justify-center gap-2 mb-8">
             <Button 
               variant={filter === 'all' ? 'default' : 'outline'} 
@@ -211,7 +207,6 @@ const QCGallery = () => {
             </Button>
           </div>
           
-          {/* כפתור הוספת פוסט */}
           {!isAddingPost && (
             <div className="text-center mb-10">
               <Button 
@@ -224,7 +219,6 @@ const QCGallery = () => {
             </div>
           )}
           
-          {/* טופס להוספת פוסט */}
           {isAddingPost && (
             <div className="mb-10 glass-card p-6 rounded-xl relative">
               <Button 
@@ -240,7 +234,6 @@ const QCGallery = () => {
             </div>
           )}
           
-          {/* אם אין פוסטים */}
           {filteredPosts.length === 0 && !loading && (
             <div className="text-center py-16 bg-secondary/20 rounded-xl mb-8">
               <div className="mb-4">
@@ -251,7 +244,6 @@ const QCGallery = () => {
             </div>
           )}
           
-          {/* טוען... */}
           {loading && (
             <div className="text-center py-16">
               <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -259,7 +251,6 @@ const QCGallery = () => {
             </div>
           )}
           
-          {/* רשימת הפוסטים */}
           {!loading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPosts.map(post => (
@@ -267,7 +258,6 @@ const QCGallery = () => {
                   key={post.id} 
                   post={post} 
                   onRate={(rating) => handleRatePost(post.id, rating)} 
-                  // הסרנו את ה-onDelete ו-showDeleteButton כדי למנוע מחיקת פוסטים מדף הגלריה
                 />
               ))}
             </div>

@@ -24,11 +24,20 @@ const ALLOWED_PRODUCT_SITES = [
   'aliexpress.com'
 ];
 
+// רשימת הקטגוריות האפשריות
+const PRODUCT_CATEGORIES = [
+  { id: 'clothing', name: 'בגדים' },
+  { id: 'shoes', name: 'נעליים' },
+  { id: 'electronics', name: 'אלקטרוניקה' },
+  { id: 'other', name: 'אחר' }
+];
+
 const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [productLink, setProductLink] = useState('');
   const [agent, setAgent] = useState('');
+  const [category, setCategory] = useState('');
   const [price, setPrice] = useState<number | undefined>(undefined);
   const [weight, setWeight] = useState<number | undefined>(undefined);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -142,12 +151,14 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
       newErrors.title = 'נא להזין כותרת';
     }
     
-    if (!description.trim()) {
-      newErrors.description = 'נא להזין תיאור';
-    }
+    // תיאור אינו שדה חובה יותר
     
     if (!agent) {
       newErrors.agent = 'נא לבחור סוכן';
+    }
+    
+    if (!category) {
+      newErrors.category = 'נא לבחור קטגוריה';
     }
     
     if (!productLink) {
@@ -191,10 +202,11 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         const newPost: QCPostType = {
           id: nanoid(),
           title,
-          description,
+          description: description.trim(), // אפשר שיהיה ריק
           images: uploadedImageUrls,
           productLink,
           agent,
+          category,
           timestamp: new Date().toISOString(),
           rating: 0,
           votes: 0,
@@ -233,19 +245,39 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
       </div>
       
-      {/* תיאור */}
+      {/* קטגוריה */}
+      <div>
+        <label htmlFor="category" className="block mb-2 font-medium">
+          קטגוריה <span className="text-red-500">*</span>
+        </label>
+        <select
+          id="category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className={`w-full px-3 py-2 border rounded-md ${
+            errors.category ? 'border-red-500' : 'border-input'
+          }`}
+        >
+          <option value="">בחר קטגוריה</option>
+          {PRODUCT_CATEGORIES.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
+        {errors.category && <p className="mt-1 text-sm text-red-500">{errors.category}</p>}
+      </div>
+      
+      {/* תיאור - עכשיו לא חובה */}
       <div>
         <label htmlFor="description" className="block mb-2 font-medium">
-          תיאור <span className="text-red-500">*</span>
+          תיאור <span className="text-xs text-muted-foreground">(אופציונלי)</span>
         </label>
         <Textarea
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="תאר את המוצר, איכות, התאמה למידות, זמן הגעה, וכו'..."
-          className={`min-h-[100px] ${errors.description ? 'border-red-500' : ''}`}
+          className="min-h-[100px]"
         />
-        {errors.description && <p className="mt-1 text-sm text-red-500">{errors.description}</p>}
       </div>
 
       {/* מחיר */}

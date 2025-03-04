@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Star, ExternalLink, Trash2, DollarSign, Scale } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -26,6 +25,7 @@ export interface QCPostType {
   userRatings?: Record<string, number>; // For backward compatibility
   price?: number; // המחיר בדולרים
   weight?: number; // המשקל בגרמים
+  category?: string; // קטגוריית המוצר
 }
 
 interface QCPostProps {
