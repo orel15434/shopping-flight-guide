@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -5,15 +6,15 @@ import Footer from '../components/Footer';
 import QCPost, { QCPostType } from '../components/QCPost';
 import AddQCPostForm from '../components/AddQCPostForm';
 import { Button } from '../components/ui/button';
-import { PlusCircle, X, Images, Shirt, ShoppingBag, Shoe } from 'lucide-react';
+import { PlusCircle, X, Images, Shirt, ShoppingBag, Monitor } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 
 const PRODUCT_CATEGORIES = [
   { id: 'all', name: 'הכל', icon: ShoppingBag },
   { id: 'clothing', name: 'בגדים', icon: Shirt },
-  { id: 'shoes', name: 'נעליים', icon: Shoe },
-  { id: 'electronics', name: 'אלקטרוניקה', icon: Images },
-  { id: 'other', name: 'אחר', icon: ShoppingBag }
+  { id: 'shoes', name: 'נעליים', icon: ShoppingBag },
+  { id: 'electronics', name: 'אלקטרוניקה', icon: Monitor },
+  { id: 'other', name: 'אחר', icon: Images }
 ];
 
 const QCGallery = () => {
