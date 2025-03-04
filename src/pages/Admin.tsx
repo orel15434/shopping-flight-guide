@@ -36,6 +36,8 @@ const Admin = () => {
   const [editingPost, setEditingPost] = useState<any>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [noteValue, setNoteValue] = useState('');
+  const [notes, setNotes] = useState<string[]>([]);
   const { toast: uiToast } = useToast();
   const navigate = useNavigate();
 
@@ -174,15 +176,21 @@ const Admin = () => {
       description: post.description || '',
       agent: post.agent,
       product_link: post.product_link || '',
-      images: post.images || []
+      images: post.images || [],
+      price: post.price || '',
+      weight: post.weight || '',
+      category: post.category || 'other'
     });
     setImageUrls(post.images || []);
+    setNotes(Array.isArray(post.notes) ? post.notes : []);
   };
 
   const handleCancelEdit = () => {
     setEditingPost(null);
     setImageUrls([]);
     setNewImageUrl('');
+    setNotes([]);
+    setNoteValue('');
   };
 
   const handleUpdatePost = async () => {
@@ -200,7 +208,11 @@ const Admin = () => {
         description: editingPost.description,
         agent: editingPost.agent,
         product_link: editingPost.product_link,
-        images: imageUrls
+        images: imageUrls,
+        price: editingPost.price !== '' ? Number(editingPost.price) : null,
+        weight: editingPost.weight !== '' ? Number(editingPost.weight) : null,
+        category: editingPost.category || 'other',
+        notes: notes.filter(note => note.trim() !== '')
       };
       
       const { data, error } = await updateQCPost(editingPost.id, updateData);
@@ -244,6 +256,19 @@ const Admin = () => {
     const updatedImages = [...imageUrls];
     updatedImages.splice(index, 1);
     setImageUrls(updatedImages);
+  };
+
+  const handleAddNote = () => {
+    if (noteValue.trim()) {
+      setNotes([...notes, noteValue.trim()]);
+      setNoteValue('');
+    }
+  };
+
+  const handleRemoveNote = (index: number) => {
+    const updatedNotes = [...notes];
+    updatedNotes.splice(index, 1);
+    setNotes(updatedNotes);
   };
 
   const handleLogout = async () => {
@@ -380,19 +405,57 @@ const Admin = () => {
                     rows={3}
                   />
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">סוכן</label>
-                  <select 
-                    className="w-full px-3 py-2 border rounded-md" 
-                    value={editingPost.agent}
-                    onChange={(e) => setEditingPost({...editingPost, agent: e.target.value})}
-                  >
-                    <option value="cssbuy">CSSBUY</option>
-                    <option value="ponybuy">PONYBUY</option>
-                    <option value="kakobuy">KAKOBUY</option>
-                    <option value="basetao">Basetao</option>
-                  </select>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">סוכן</label>
+                    <select 
+                      className="w-full px-3 py-2 border rounded-md" 
+                      value={editingPost.agent}
+                      onChange={(e) => setEditingPost({...editingPost, agent: e.target.value})}
+                    >
+                      <option value="cssbuy">CSSBUY</option>
+                      <option value="ponybuy">PONYBUY</option>
+                      <option value="kakobuy">KAKOBUY</option>
+                      <option value="basetao">Basetao</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">קטגוריה</label>
+                    <select 
+                      className="w-full px-3 py-2 border rounded-md" 
+                      value={editingPost.category}
+                      onChange={(e) => setEditingPost({...editingPost, category: e.target.value})}
+                    >
+                      <option value="shoes">נעליים</option>
+                      <option value="clothes">בגדים</option>
+                      <option value="accessories">אקססוריז</option>
+                      <option value="other">אחר</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">מחיר (יואן)</label>
+                    <Input 
+                      type="number"
+                      value={editingPost.price} 
+                      onChange={(e) => setEditingPost({...editingPost, price: e.target.value})}
+                      placeholder="הזן מחיר (אופציונלי)"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">משקל (גרם)</label>
+                    <Input 
+                      type="number"
+                      value={editingPost.weight} 
+                      onChange={(e) => setEditingPost({...editingPost, weight: e.target.value})}
+                      placeholder="הזן משקל (אופציונלי)"
+                    />
+                  </div>
                 </div>
                 
                 <div>
@@ -438,6 +501,38 @@ const Admin = () => {
                     </Button>
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">הערות אישיות</label>
+                  <div className="space-y-2 mb-4">
+                    {notes.map((note, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input value={note} readOnly />
+                        <Button 
+                          variant="destructive" 
+                          size="icon"
+                          onClick={() => handleRemoveNote(index)}
+                        >
+                          <Minus size={16} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={noteValue} 
+                      onChange={(e) => setNoteValue(e.target.value)}
+                      placeholder="הזן הערה חדשה"
+                    />
+                    <Button 
+                      onClick={handleAddNote}
+                      className="flex items-center gap-1"
+                    >
+                      <Plus size={16} />
+                      הוסף
+                    </Button>
+                  </div>
+                </div>
                 
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" onClick={handleCancelEdit}>ביטול</Button>
@@ -471,8 +566,12 @@ const Admin = () => {
                     <tr className="border-b">
                       <th className="py-2 px-4 text-right">כותרת</th>
                       <th className="py-2 px-4 text-right">סוכן</th>
+                      <th className="py-2 px-4 text-right">קטגוריה</th>
+                      <th className="py-2 px-4 text-right">מחיר</th>
+                      <th className="py-2 px-4 text-right">משקל</th>
                       <th className="py-2 px-4 text-right">דירוג</th>
                       <th className="py-2 px-4 text-right">תמונות</th>
+                      <th className="py-2 px-4 text-right">הערות</th>
                       <th className="py-2 px-4 text-right">תאריך</th>
                       <th className="py-2 px-4 text-right">פעולות</th>
                     </tr>
@@ -482,8 +581,12 @@ const Admin = () => {
                       <tr key={post.id} className="border-b hover:bg-secondary/10">
                         <td className="py-3 px-4">{post.title}</td>
                         <td className="py-3 px-4">{post.agent}</td>
+                        <td className="py-3 px-4">{post.category || 'אחר'}</td>
+                        <td className="py-3 px-4">{post.price ? `¥${post.price}` : '-'}</td>
+                        <td className="py-3 px-4">{post.weight ? `${post.weight}g` : '-'}</td>
                         <td className="py-3 px-4">{post.rating?.toFixed(1) || '0.0'} ({post.votes || 0})</td>
                         <td className="py-3 px-4">{post.images?.length || 0}</td>
+                        <td className="py-3 px-4">{Array.isArray(post.notes) ? post.notes.length : 0}</td>
                         <td className="py-3 px-4">
                           {new Date(post.created_at).toLocaleDateString('he-IL')}
                         </td>
