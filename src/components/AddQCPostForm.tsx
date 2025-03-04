@@ -218,6 +218,7 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
           price: price,
           weight: weight,
           slug: slug,
+          // Only include notes if there are actual non-empty notes
           notes: filteredNotes.length > 0 ? filteredNotes : undefined
         };
         

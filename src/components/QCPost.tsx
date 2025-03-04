@@ -268,12 +268,13 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
           
           <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{post.description}</p>
           
+          {/* Display notes as small buttons with blue gradient */}
           {post.notes && post.notes.length > 0 && (
-            <div className="mb-4 space-y-2">
+            <div className="mb-4 flex flex-wrap gap-2">
               {post.notes.map((note, index) => (
                 <div 
                   key={index} 
-                  className="px-3 py-2 rounded-lg text-white text-sm"
+                  className="px-3 py-1.5 rounded-lg text-white text-sm inline-block"
                   style={{ 
                     background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
                     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
