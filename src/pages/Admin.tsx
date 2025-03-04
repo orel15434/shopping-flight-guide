@@ -97,18 +97,25 @@ const Admin = () => {
     setLoginError('');
     
     try {
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        console.log("Credentials match, logging in as admin");
+      console.log("Attempting to log in with:", email);
+      
+      const { data, error } = await adminLogin(email, password);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.session) {
+        localStorage.setItem('admin_logged_in', 'true');
+        setIsAuthenticated(true);
         
-        const { data, error } = await adminLogin();
+        const { isAdmin, adminData, error: adminCheckError } = await checkIsAdmin(email);
         
-        if (error) {
-          throw error;
+        if (adminCheckError) {
+          throw adminCheckError;
         }
         
-        if (data) {
-          localStorage.setItem('admin_logged_in', 'true');
-          setIsAuthenticated(true);
+        if (isAdmin) {
           setIsAdmin(true);
           
           toast.success("התחברת בהצלחה", {
@@ -116,16 +123,18 @@ const Admin = () => {
           });
           
           loadQCPosts();
+        } else {
+          throw new Error("אין לך הרשאות גישה לעמוד זה");
         }
       } else {
-        setLoginError('פרטי ההתחברות שגויים');
-        toast.error("התחברות נכשלה", {
-          description: "פרטי ההתחברות שגויים",
-        });
+        throw new Error("התחברות נכשלה - לא התקבלו נתונים מהשרת");
       }
     } catch (error: any) {
       console.error("Authentication error:", error);
       setLoginError(error.message || 'אירעה שגיאה בהתחברות');
+      toast.error("התחברות נכשלה", {
+        description: error.message || 'פרטי ההתחברות שגויים',
+      });
     } finally {
       setLoading(false);
     }

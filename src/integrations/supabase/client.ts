@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -26,25 +25,14 @@ export const checkIsAdmin = async (email: string) => {
 };
 
 // פונקצית התחברות מותאמת
-export const adminLogin = async () => {
+export const adminLogin = async (email: string, password: string) => {
   try {
-    // נדמה התחברות מוצלחת
-    return {
-      data: {
-        user: {
-          id: '1',
-          email: ADMIN_EMAIL,
-        },
-        session: {
-          access_token: 'admin_token',
-          user: {
-            id: '1',
-            email: ADMIN_EMAIL,
-          }
-        }
-      },
-      error: null
-    };
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return { data, error: null };
   } catch (error) {
     console.error("Error in admin login:", error);
     return { data: null, error };
