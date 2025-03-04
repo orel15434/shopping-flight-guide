@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 import { PlusCircle, X, Images, Shirt, ShoppingBag, Monitor } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { AnimatedCategoryBar } from '../components/ui/animated-category-bar';
+import { AnimatedTextCycle } from '../components/ui/animated-text-cycle';
 import { useIsMobile, useIsVerySmallScreen, useIsExtraSmallScreen } from '../hooks/use-mobile';
 import { cn } from '../lib/utils';
 
@@ -18,6 +19,12 @@ const PRODUCT_CATEGORIES = [
   { id: 'shoes', name: 'נעליים', icon: ShoppingBag },
   { id: 'electronics', name: 'אלקטרוניקה', icon: Monitor },
   { id: 'other', name: 'אחר', icon: Images }
+];
+
+const ANIMATED_TEXTS = [
+  { content: "שתף את ה-QC שלך", color: "text-purple-500" },
+  { content: "דרג בקלות", color: "text-orange-500" },
+  { content: "קנה בקלות", color: "text-sky-500" }
 ];
 
 const QCGallery = () => {
@@ -177,7 +184,11 @@ const QCGallery = () => {
         <div className="container">
           <div className="text-center mb-12">
             <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4 heading-gradient">
-              3
+              <AnimatedTextCycle 
+                texts={ANIMATED_TEXTS} 
+                interval={4000} // 4 seconds per text for a slower transition
+                className="min-h-[1.5em]"
+              />
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               כאן תוכלו לראות תמונות QC של מוצרים שקנו משתמשים אחרים, לקבל השראה ולשתף את התמונות שלכם.
