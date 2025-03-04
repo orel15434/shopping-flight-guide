@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -185,13 +186,13 @@ const QCGallery = () => {
           
           <div className={cn(
             "flex justify-center mb-8 overflow-hidden",
-            isExtraSmallScreen ? "scale-90 -mx-4" : isVerySmallScreen ? "px-0.5" : isMobile ? "px-1" : "px-2"
+            isExtraSmallScreen ? "px-0" : isVerySmallScreen ? "px-0.5" : isMobile ? "px-1" : "px-2"
           )}>
             <AnimatedCategoryBar 
               items={PRODUCT_CATEGORIES}
               activeItem={filter}
               onItemClick={setFilter}
-              className="max-w-full mx-auto overflow-visible"
+              className="max-w-full mx-auto"
             />
           </div>
           
