@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -9,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { PlusCircle, X, Images, Shirt, ShoppingBag, Monitor } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { AnimatedCategoryBar } from '../components/ui/animated-category-bar';
+import { useIsMobile } from '../hooks/use-mobile';
 
 const PRODUCT_CATEGORIES = [
   { id: 'all', name: 'הכל', icon: ShoppingBag },
@@ -25,11 +25,12 @@ const QCGallery = () => {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const { toast } = useToast();
-  
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     loadPosts();
   }, []);
-  
+
   const loadPosts = async () => {
     setLoading(true);
     try {
@@ -71,7 +72,7 @@ const QCGallery = () => {
       setLoading(false);
     }
   };
-  
+
   const addNewPost = async (post: QCPostType) => {
     try {
       console.log('Adding new post:', post);
@@ -143,7 +144,7 @@ const QCGallery = () => {
       });
     }
   };
-  
+
   const handleRatePost = async (postId: string, rating: number) => {
     setPosts(posts.map(post => {
       if (post.id === postId) {
@@ -159,11 +160,11 @@ const QCGallery = () => {
       return post;
     }));
   };
-  
+
   const filteredPosts = filter === 'all' 
     ? posts 
     : posts.filter(post => post.category === filter);
-  
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -179,12 +180,12 @@ const QCGallery = () => {
             </p>
           </div>
           
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-8 px-2">
             <AnimatedCategoryBar 
               items={PRODUCT_CATEGORIES}
               activeItem={filter}
               onItemClick={setFilter}
-              className="max-w-fit mx-auto"
+              className="max-w-full mx-auto overflow-visible"
             />
           </div>
           

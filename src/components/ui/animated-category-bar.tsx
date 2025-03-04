@@ -3,6 +3,7 @@ import * as React from "react";
 import { motion, HTMLMotionProps, MotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CategoryItem {
   id: string;
@@ -59,6 +60,8 @@ const sharedTransition = {
 
 export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCategoryBarProps>(
   ({ className, items, activeItem, onItemClick }, ref) => {
+    const isMobile = useIsMobile();
+    
     const getGradient = (id: string) => {
       switch(id) {
         case 'clothing':
@@ -107,7 +110,10 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
           className="absolute -inset-2 bg-gradient-radial from-transparent via-blue-400/20 via-30% via-purple-400/20 via-60% via-red-400/20 via-90% to-transparent rounded-3xl z-0 pointer-events-none"
           variants={navGlowVariants}
         />
-        <ul className="flex items-center gap-2 relative z-10">
+        <ul className={cn(
+          "flex items-center gap-2 relative z-10",
+          isMobile && "gap-1" // Reduce gap on mobile
+        )}>
           {items.map((item) => {
             const Icon = item.icon;
             const isActive = item.id === activeItem;
@@ -142,6 +148,7 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                         isActive
                           ? "text-foreground"
                           : "text-muted-foreground group-hover:text-foreground",
+                        isMobile && "px-2 py-1.5 text-sm gap-1.5" // Smaller padding and text on mobile
                       )}
                       variants={itemVariants}
                       transition={sharedTransition}
@@ -156,7 +163,7 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                           isActive ? iconColor : "text-foreground",
                         )}
                       >
-                        <Icon className="h-5 w-5" />
+                        <Icon className={cn("h-5 w-5", isMobile && "h-4 w-4")} />
                       </span>
                       <span>{item.name}</span>
                     </motion.div>
@@ -166,6 +173,7 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                         isActive
                           ? "text-foreground"
                           : "text-muted-foreground group-hover:text-foreground",
+                        isMobile && "px-2 py-1.5 text-sm gap-1.5" // Smaller padding and text on mobile
                       )}
                       variants={backVariants}
                       transition={sharedTransition}
@@ -181,7 +189,7 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                           isActive ? iconColor : "text-foreground",
                         )}
                       >
-                        <Icon className="h-5 w-5" />
+                        <Icon className={cn("h-5 w-5", isMobile && "h-4 w-4")} />
                       </span>
                       <span>{item.name}</span>
                     </motion.div>
