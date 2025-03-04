@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { nanoid } from 'nanoid';
 import { Button } from './ui/button';
@@ -6,7 +5,6 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { ImagePlus, Trash2, Check, Loader2, DollarSign, Scale } from 'lucide-react';
 import { QCPostType } from './QCPost';
-import { agents } from '../pages/Index';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from '../hooks/use-toast';
 
@@ -36,7 +34,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [productLink, setProductLink] = useState('');
-  const [agent, setAgent] = useState('');
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState<number | undefined>(undefined);
   const [weight, setWeight] = useState<number | undefined>(undefined);
@@ -153,10 +150,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     
     // תיאור אינו שדה חובה יותר
     
-    if (!agent) {
-      newErrors.agent = 'נא לבחור סוכן';
-    }
-    
     if (!category) {
       newErrors.category = 'נא לבחור קטגוריה';
     }
@@ -198,14 +191,14 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         
         setUploadProgress(100);
         
-        // יצירת פוסט חדש
+        // יצירת פוסט חדש עם agent קבוע
         const newPost: QCPostType = {
           id: nanoid(),
           title,
           description: description.trim(), // אפשר שיהיה ריק
           images: uploadedImageUrls,
           productLink,
-          agent,
+          agent: 'other', // ערך קבוע במקום בחירה
           category,
           timestamp: new Date().toISOString(),
           rating: 0,
@@ -317,27 +310,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
           />
           <Scale size={16} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
         </div>
-      </div>
-      
-      {/* סוכן */}
-      <div>
-        <label htmlFor="agent" className="block mb-2 font-medium">
-          סוכן <span className="text-red-500">*</span>
-        </label>
-        <select
-          id="agent"
-          value={agent}
-          onChange={(e) => setAgent(e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md ${
-            errors.agent ? 'border-red-500' : 'border-input'
-          }`}
-        >
-          <option value="">בחר סוכן</option>
-          {agents.map(agent => (
-            <option key={agent.id} value={agent.id}>{agent.name}</option>
-          ))}
-        </select>
-        {errors.agent && <p className="mt-1 text-sm text-red-500">{errors.agent}</p>}
       </div>
       
       {/* קישור למוצר */}

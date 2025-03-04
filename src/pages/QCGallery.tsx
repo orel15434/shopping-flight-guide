@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -6,8 +5,16 @@ import Footer from '../components/Footer';
 import QCPost, { QCPostType } from '../components/QCPost';
 import AddQCPostForm from '../components/AddQCPostForm';
 import { Button } from '../components/ui/button';
-import { PlusCircle, X, Images } from 'lucide-react';
+import { PlusCircle, X, Images, Shirt, ShoppingBag, Shoe } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+
+const PRODUCT_CATEGORIES = [
+  { id: 'all', name: 'הכל', icon: ShoppingBag },
+  { id: 'clothing', name: 'בגדים', icon: Shirt },
+  { id: 'shoes', name: 'נעליים', icon: Shoe },
+  { id: 'electronics', name: 'אלקטרוניקה', icon: Images },
+  { id: 'other', name: 'אחר', icon: ShoppingBag }
+];
 
 const QCGallery = () => {
   const [posts, setPosts] = useState<QCPostType[]>([]);
@@ -46,7 +53,6 @@ const QCGallery = () => {
           created_at: post.created_at,
           price: typeof post.price === 'number' ? post.price : undefined,
           weight: typeof post.weight === 'number' ? post.weight : undefined,
-          // Ensure category is properly handled with a default value
           category: post.category || 'other'
         }));
         
@@ -154,7 +160,7 @@ const QCGallery = () => {
   
   const filteredPosts = filter === 'all' 
     ? posts 
-    : posts.filter(post => post.agent === filter);
+    : posts.filter(post => post.category === filter);
   
   return (
     <div className="min-h-screen bg-background">
@@ -172,41 +178,17 @@ const QCGallery = () => {
           </div>
           
           <div className="flex flex-wrap justify-center gap-2 mb-8">
-            <Button 
-              variant={filter === 'all' ? 'default' : 'outline'} 
-              onClick={() => setFilter('all')}
-              className="px-4 py-2 rounded-full text-sm"
-            >
-              הכל
-            </Button>
-            <Button 
-              variant={filter === 'cssbuy' ? 'default' : 'outline'} 
-              onClick={() => setFilter('cssbuy')}
-              className="px-4 py-2 rounded-full text-sm"
-            >
-              CSSBUY
-            </Button>
-            <Button 
-              variant={filter === 'ponybuy' ? 'default' : 'outline'} 
-              onClick={() => setFilter('ponybuy')}
-              className="px-4 py-2 rounded-full text-sm"
-            >
-              PONYBUY
-            </Button>
-            <Button 
-              variant={filter === 'kakobuy' ? 'default' : 'outline'} 
-              onClick={() => setFilter('kakobuy')}
-              className="px-4 py-2 rounded-full text-sm"
-            >
-              KAKOBUY
-            </Button>
-            <Button 
-              variant={filter === 'basetao' ? 'default' : 'outline'} 
-              onClick={() => setFilter('basetao')}
-              className="px-4 py-2 rounded-full text-sm"
-            >
-              Basetao
-            </Button>
+            {PRODUCT_CATEGORIES.map(category => (
+              <Button 
+                key={category.id}
+                variant={filter === category.id ? 'default' : 'outline'} 
+                onClick={() => setFilter(category.id)}
+                className="px-4 py-2 rounded-full text-sm flex items-center gap-2"
+              >
+                <category.icon size={18} />
+                <span>{category.name}</span>
+              </Button>
+            ))}
           </div>
           
           {!isAddingPost && (
@@ -242,7 +224,7 @@ const QCGallery = () => {
                 <Images size={48} className="mx-auto text-muted-foreground opacity-50" />
               </div>
               <h3 className="text-xl font-medium">אין תמונות QC להצגה</h3>
-              <p className="text-muted-foreground mt-2">היה הראשון לשתף תמונות איכות מהסוכן!</p>
+              <p className="text-muted-foreground mt-2">היה הראשון לשתף תמונות איכות מהקטגוריה הזו!</p>
             </div>
           )}
           
