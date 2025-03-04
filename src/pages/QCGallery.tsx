@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -45,6 +46,7 @@ const QCGallery = () => {
           created_at: post.created_at,
           price: typeof post.price === 'number' ? post.price : undefined,
           weight: typeof post.weight === 'number' ? post.weight : undefined,
+          // Ensure category is properly handled with a default value
           category: post.category || 'other'
         }));
         
