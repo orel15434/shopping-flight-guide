@@ -1,6 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { createSlug } from '../utils/slugify';
 
 const supabaseUrl = 'https://szpbqcvzuksaqrtihbea.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6cGJxY3Z6dWtzYXFydGloYmVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA4NDkzODYsImV4cCI6MjA1NjQyNTM4Nn0.xgZsANt3xKvkKke1aHJXMSfZvzXOQ53Xsl_iWBs5DGs';
@@ -109,6 +110,11 @@ export const updateQCPost = async (postId: string, updateData: any) => {
     
     if (!updateData || typeof updateData !== 'object') {
       throw new Error('Invalid update data provided');
+    }
+    
+    // If the title is being updated, regenerate the slug
+    if (updateData.title) {
+      updateData.slug = createSlug(updateData.title);
     }
     
     // Skip unnecessary existence check for performance

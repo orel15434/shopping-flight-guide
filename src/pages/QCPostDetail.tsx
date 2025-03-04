@@ -9,6 +9,7 @@ import QCPost, { QCPostType } from '../components/QCPost';
 import { Button } from '../components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { extractPostIdFromSlug } from '../utils/slugify';
 
 const QCPostDetail = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -28,10 +29,13 @@ const QCPostDetail = () => {
           throw new Error("מזהה פוסט חסר");
         }
         
+        // Extract the actual UUID from the URL parameter which might include a slug
+        const actualPostId = extractPostIdFromSlug(postId);
+        
         const { data, error } = await supabase
           .from('qc_posts')
           .select('*')
-          .eq('id', postId)
+          .eq('id', actualPostId)
           .single();
           
         if (error) throw error;
@@ -58,7 +62,8 @@ const QCPostDetail = () => {
             created_at: data.created_at,
             price: typeof data.price === 'number' ? data.price : undefined,
             weight: typeof data.weight === 'number' ? data.weight : undefined,
-            category: data.category || 'other'
+            category: data.category || 'other',
+            slug: data.slug || ''
           };
           
           setPost(formattedPost);

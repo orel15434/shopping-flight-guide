@@ -7,13 +7,13 @@ import { ImagePlus, Trash2, Check, Loader2, DollarSign, Scale } from 'lucide-rea
 import { QCPostType } from './QCPost';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from '../hooks/use-toast';
+import { createSlug } from '../utils/slugify';
 
 interface AddQCPostFormProps {
   onSubmit: (post: QCPostType) => void;
   onCancel: () => void;
 }
 
-// רשימת סוגי הקישורים המורשים
 const ALLOWED_PRODUCT_SITES = [
   'taobao.com',
   'weidian.com',
@@ -22,7 +22,6 @@ const ALLOWED_PRODUCT_SITES = [
   'aliexpress.com'
 ];
 
-// רשימת הקטגוריות האפשריות
 const PRODUCT_CATEGORIES = [
   { id: 'clothing', name: 'בגדים' },
   { id: 'shoes', name: 'נעליים' },
@@ -44,7 +43,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
-  // בדיקה האם הקישור תקין
   const isValidProductLink = (link: string): boolean => {
     if (!link) return false;
     
@@ -56,7 +54,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     }
   };
 
-  // העלאת תמונות לסופאבייס
   const uploadImageToStorage = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${nanoid()}.${fileExt}`;
@@ -77,7 +74,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     return publicUrl.publicUrl;
   };
 
-  // הוספת תמונה 
   const addImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       if (imageFiles.length >= 3) {
@@ -94,12 +90,10 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     }
   };
 
-  // מחיקת תמונה
   const removeImage = (index: number) => {
     const newFiles = [...imageFiles];
     const newPreviews = [...imagePreviewUrls];
     
-    // Release blob URL to prevent memory leaks
     URL.revokeObjectURL(newPreviews[index]);
     
     newFiles.splice(index, 1);
@@ -109,7 +103,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     setImagePreviewUrls(newPreviews);
   };
 
-  // טיפול בשינוי מחיר - ומרה למספר
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === '') {
@@ -123,7 +116,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     }
   };
 
-  // טיפול בשינוי משקל - המרה למספר
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === '') {
@@ -137,18 +129,14 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     }
   };
 
-  // טיפול בשליחת הטופס
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // אימות שדות
     const newErrors: Record<string, string> = {};
     
     if (!title.trim()) {
       newErrors.title = 'נא להזין כותרת';
     }
-    
-    // תיאור אינו שדה חובה יותר
     
     if (!category) {
       newErrors.category = 'נא לבחור קטגוריה';
@@ -172,40 +160,39 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     
     setErrors(newErrors);
     
-    // אם אין שגיאות, שולחים את הטופס
     if (Object.keys(newErrors).length === 0) {
       setIsSubmitting(true);
       
       try {
-        // העלאת כל התמונות לסטוראג'
         const uploadedImageUrls = [];
         const totalImages = imageFiles.length;
         
         for (let i = 0; i < imageFiles.length; i++) {
           setUploadProgress(Math.round((i / totalImages) * 100));
           
-          // העלאת התמונה לסטוראג'
           const imageUrl = await uploadImageToStorage(imageFiles[i]);
           uploadedImageUrls.push(imageUrl);
         }
         
         setUploadProgress(100);
         
-        // יצירת פוסט חדש עם agent קבוע
+        const slug = createSlug(title);
+        
         const newPost: QCPostType = {
           id: nanoid(),
           title,
-          description: description.trim(), // אפשר שיהיה ריק
+          description: description.trim(),
           images: uploadedImageUrls,
           productLink,
-          agent: 'other', // ערך קבוע במקום בחירה
+          agent: 'other',
           category,
           timestamp: new Date().toISOString(),
           rating: 0,
           votes: 0,
           userRatings: {},
           price: price,
-          weight: weight
+          weight: weight,
+          slug: slug
         };
         
         onSubmit(newPost);
@@ -223,7 +210,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* כותרת */}
       <div>
         <label htmlFor="title" className="block mb-2 font-medium">
           כותרת <span className="text-red-500">*</span>
@@ -238,7 +224,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
       </div>
       
-      {/* קטגוריה */}
       <div>
         <label htmlFor="category" className="block mb-2 font-medium">
           קטגוריה <span className="text-red-500">*</span>
@@ -259,7 +244,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         {errors.category && <p className="mt-1 text-sm text-red-500">{errors.category}</p>}
       </div>
       
-      {/* תיאור - עכשיו לא חובה */}
       <div>
         <label htmlFor="description" className="block mb-2 font-medium">
           תיאור <span className="text-xs text-muted-foreground">(אופציונלי)</span>
@@ -273,7 +257,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         />
       </div>
 
-      {/* מחיר */}
       <div>
         <label htmlFor="price" className="block mb-2 font-medium">
           מחיר (בדולרים) <span className="text-red-500">*</span>
@@ -294,7 +277,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         {errors.price && <p className="mt-1 text-sm text-red-500">{errors.price}</p>}
       </div>
       
-      {/* משקל (אופציונלי) */}
       <div>
         <label htmlFor="weight" className="block mb-2 font-medium">
           משקל (גרמים) <span className="text-xs text-muted-foreground">(אופציונלי)</span>
@@ -312,7 +294,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         </div>
       </div>
       
-      {/* קישור למוצר */}
       <div>
         <label htmlFor="productLink" className="block mb-2 font-medium">
           קישור למוצר <span className="text-red-500">*</span>
@@ -331,14 +312,12 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         </p>
       </div>
       
-      {/* העלאת תמונות */}
       <div>
         <label className="block mb-2 font-medium">
           תמונות QC <span className="text-red-500">*</span> <span className="text-xs text-muted-foreground">(עד 3 תמונות)</span>
         </label>
         
         <div className="grid grid-cols-3 gap-4 mb-4">
-          {/* תמונות שהועלו */}
           {imagePreviewUrls.map((image, index) => (
             <div key={index} className="relative aspect-square rounded-md overflow-hidden border">
               <img src={image} alt={`תמונה ${index + 1}`} className="w-full h-full object-cover" />
@@ -353,7 +332,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
             </div>
           ))}
           
-          {/* כפתור להוספת תמונה */}
           {imagePreviewUrls.length < 3 && (
             <label className={`cursor-pointer aspect-square flex items-center justify-center border border-dashed rounded-md hover:bg-secondary/20 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
               <div className="text-center">
@@ -374,7 +352,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         {errors.images && <p className="mt-1 text-sm text-red-500">{errors.images}</p>}
       </div>
       
-      {/* סטטוס העלאה */}
       {isSubmitting && uploadProgress > 0 && (
         <div className="mt-2">
           <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -389,7 +366,6 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         </div>
       )}
       
-      {/* כפתורי פעולה */}
       <div className="flex justify-end gap-4 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           ביטול

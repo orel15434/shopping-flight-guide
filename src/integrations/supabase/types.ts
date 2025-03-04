@@ -38,6 +38,7 @@ export type Database = {
           price: number | null
           product_link: string | null
           rating: number | null
+          slug: string | null
           title: string
           user_ratings: Json | null
           votes: number | null
@@ -53,6 +54,7 @@ export type Database = {
           price?: number | null
           product_link?: string | null
           rating?: number | null
+          slug?: string | null
           title: string
           user_ratings?: Json | null
           votes?: number | null
@@ -68,6 +70,7 @@ export type Database = {
           price?: number | null
           product_link?: string | null
           rating?: number | null
+          slug?: string | null
           title?: string
           user_ratings?: Json | null
           votes?: number | null

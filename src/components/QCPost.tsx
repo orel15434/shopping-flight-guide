@@ -28,6 +28,7 @@ export interface QCPostType {
   price?: number; // המחיר בדולרים
   weight?: number; // המשקל בגרמים
   category?: string; // קטגוריית המוצר
+  slug?: string; // URL-friendly slug
 }
 
 interface QCPostProps {
@@ -112,8 +113,16 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
 
   const agentInfo = agents.find(a => a.id === post.agent);
   
+  const getShareUrl = () => {
+    const baseUrl = `${window.location.origin}/qc-post/`;
+    if (post.slug) {
+      return `${baseUrl}${post.slug}-${post.id}`;
+    }
+    return `${baseUrl}${post.id}`;
+  };
+  
   const handleShare = async () => {
-    const postUrl = `${window.location.origin}/qc-post/${post.id}`;
+    const postUrl = getShareUrl();
     
     if (navigator.share && isMobile) {
       try {
