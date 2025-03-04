@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { createSlug } from '../../utils/slugify';
@@ -140,6 +139,57 @@ export const updateQCPost = async (postId: string, updateData: any) => {
     return { data: data[0], error: null };
   } catch (error) {
     console.error(`Error updating post ${postId}:`, error);
+    return { data: null, error };
+  }
+};
+
+export const rateQCPost = async (postId: string, rating: number) => {
+  try {
+    console.log(`Rating post ${postId} with rating ${rating}`);
+    
+    // Fetch the current post data
+    const { data: post, error: fetchError } = await supabase
+      .from('qc_posts')
+      .select('rating, votes')
+      .eq('id', postId)
+      .single();
+      
+    if (fetchError) {
+      console.error(`Error fetching post ${postId}:`, fetchError);
+      throw fetchError;
+    }
+    
+    if (!post) {
+      throw new Error(`No post found with ID: ${postId}`);
+    }
+    
+    // Calculate the new rating and votes
+    const currentVotes = post.votes || 0;
+    const currentRating = post.rating || 0;
+    const newVotes = currentVotes + 1;
+    const newRating = ((currentRating * currentVotes) + rating) / newVotes;
+    
+    console.log(`Updating post ${postId} from rating ${currentRating} (${currentVotes} votes) to ${newRating} (${newVotes} votes)`);
+    
+    // Update the post with the new rating and votes
+    const { data, error } = await supabase
+      .from('qc_posts')
+      .update({
+        rating: newRating,
+        votes: newVotes
+      })
+      .eq('id', postId)
+      .select();
+      
+    if (error) {
+      console.error(`Error updating post ${postId} rating:`, error);
+      throw error;
+    }
+    
+    console.log(`Successfully rated post ${postId}:`, data);
+    return { data, error: null };
+  } catch (error) {
+    console.error(`Error rating post ${postId}:`, error);
     return { data: null, error };
   }
 };

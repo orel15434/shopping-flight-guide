@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Star, ExternalLink, Trash2, DollarSign, Scale, X, Share2, Copy } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import he from 'date-fns/locale/he';
 import { agents } from '../pages/Index';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, rateQCPost } from '../integrations/supabase/client';
 import { useToast } from '../hooks/use-toast';
 import { Button } from './ui/button';
 import { InteractiveHoverButton } from './ui/interactive-hover-button';
@@ -69,17 +68,16 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
       try {
         onRate(rating);
         
-        const { error } = await supabase
-          .from('qc_posts')
-          .update({
-            rating: ((post.rating * post.votes) + rating) / (post.votes + 1),
-            votes: post.votes + 1
-          })
-          .eq('id', post.id);
+        const { error } = await rateQCPost(post.id, rating);
           
         if (error) throw error;
         
         setHasRated(true);
+        
+        toast({
+          description: "תודה על הדירוג!",
+          variant: "default",
+        });
       } catch (error: any) {
         console.error('Error rating post:', error);
         toast({
@@ -268,7 +266,6 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
           
           <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{post.description}</p>
           
-          {/* Display notes as small buttons with blue gradient */}
           {post.notes && post.notes.length > 0 && (
             <div className="mb-4 flex flex-wrap gap-2">
               {post.notes.map((note, index) => (

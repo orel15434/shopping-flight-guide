@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -160,6 +159,7 @@ const QCGallery = () => {
   };
 
   const handleRatePost = async (postId: string, rating: number) => {
+    // Update UI immediately for a better user experience
     setPosts(posts.map(post => {
       if (post.id === postId) {
         const newVotes = post.votes + 1;

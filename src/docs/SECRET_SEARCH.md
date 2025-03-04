@@ -49,6 +49,24 @@ The current implementation uses:
 4. **Image Matching**: Images may not always match the actual product
 5. **Translation Limitations**: Complex queries or specific brand names may not translate accurately
 
+## QC Rating System
+
+The QC Posts feature includes a rating system that allows users to rate products:
+
+1. **Rating Storage**: Each post stores:
+   - `rating`: The average rating value (0-5 stars)
+   - `votes`: The number of votes received
+
+2. **Rating Persistence**: 
+   - Ratings are persisted in the Supabase database
+   - The system recalculates the average rating when a new rating is submitted
+   - Users can see updated ratings even after page refresh
+
+3. **Rating UI**:
+   - Star rating interface (1-5 stars)
+   - Shows the average rating and number of votes
+   - Visual feedback when a user submits a rating
+
 ## Future Implementation
 
 To fully enhance this feature, you would need:
