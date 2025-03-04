@@ -37,6 +37,12 @@ const QCPostDetail = () => {
         if (error) throw error;
         
         if (data) {
+          const userRatings = data.user_ratings ? 
+            (typeof data.user_ratings === 'object' ? 
+              data.user_ratings as Record<string, number> : 
+              {}
+            ) : {};
+            
           const formattedPost: QCPostType = {
             id: data.id,
             title: data.title,
@@ -47,12 +53,8 @@ const QCPostDetail = () => {
             agent: data.agent,
             rating: data.rating || 0,
             votes: data.votes || 0,
-            userRatings: data.user_ratings ? 
-              (typeof data.user_ratings === 'object' ? 
-                data.user_ratings as Record<string, number> : 
-                {}
-              ) : {},
-            user_ratings: data.user_ratings,
+            userRatings: userRatings,
+            user_ratings: userRatings,
             created_at: data.created_at,
             price: typeof data.price === 'number' ? data.price : undefined,
             weight: typeof data.weight === 'number' ? data.weight : undefined,

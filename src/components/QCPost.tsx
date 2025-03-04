@@ -9,6 +9,7 @@ import { useToast } from '../hooks/use-toast';
 import { Button } from './ui/button';
 import { InteractiveHoverButton } from './ui/interactive-hover-button';
 import { Dialog, DialogContent } from './ui/dialog';
+import { useIsMobile } from '../hooks/use-mobile';
 
 export interface QCPostType {
   id: string;
@@ -44,6 +45,7 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
   const [dialogImageIndex, setDialogImageIndex] = useState(0);
   const [showShareTooltip, setShowShareTooltip] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const getProductSite = (url: string): string => {
     if (!url) return 'אתר חיצוני';
@@ -113,8 +115,7 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
   const handleShare = () => {
     const postUrl = `${window.location.origin}/qc-post/${post.id}`;
     
-    // Try to use the native share API if available
-    if (navigator.share) {
+    if (navigator.share && isMobile) {
       navigator.share({
         title: post.title,
         text: post.description,
