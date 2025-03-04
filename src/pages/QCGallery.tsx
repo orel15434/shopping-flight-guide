@@ -45,8 +45,8 @@ const QCGallery = () => {
               {}
             ) : {},
           created_at: post.created_at,
-          price: post.price,
-          weight: post.weight
+          price: post.price || undefined,
+          weight: post.weight || undefined
         }));
         
         setPosts(formattedPosts);

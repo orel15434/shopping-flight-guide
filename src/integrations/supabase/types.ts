@@ -34,11 +34,13 @@ export type Database = {
           description: string | null
           id: string
           images: string[]
+          price: number | null
           product_link: string | null
           rating: number | null
           title: string
           user_ratings: Json | null
           votes: number | null
+          weight: number | null
         }
         Insert: {
           agent: string
@@ -46,11 +48,13 @@ export type Database = {
           description?: string | null
           id?: string
           images?: string[]
+          price?: number | null
           product_link?: string | null
           rating?: number | null
           title: string
           user_ratings?: Json | null
           votes?: number | null
+          weight?: number | null
         }
         Update: {
           agent?: string
@@ -58,11 +62,13 @@ export type Database = {
           description?: string | null
           id?: string
           images?: string[]
+          price?: number | null
           product_link?: string | null
           rating?: number | null
           title?: string
           user_ratings?: Json | null
           votes?: number | null
+          weight?: number | null
         }
         Relationships: []
       }
