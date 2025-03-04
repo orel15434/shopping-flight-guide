@@ -18,8 +18,11 @@ export const UnderwearIcon = forwardRef<SVGSVGElement, LucideProps>(
         strokeLinejoin="round"
         {...props}
       >
-        <path d="M4 4H20V10H12L10 14L8 10H4Z"/>
-        <path d="M8 10H16"/>
+        {/* More detailed underwear shape */}
+        <path d="M5 6h14v4c0 0 0 4-7 4s-7-4-7-4V6z" />
+        <path d="M5 10h14" />
+        <path d="M8 10v2" />
+        <path d="M16 10v2" />
       </svg>
     );
   }
