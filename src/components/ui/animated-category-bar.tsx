@@ -1,9 +1,9 @@
 
 import * as React from "react";
-import { motion, HTMLMotionProps, MotionProps } from "framer-motion";
+import { motion, MotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useIsVerySmallScreen } from "@/hooks/use-mobile";
 
 interface CategoryItem {
   id: string;
@@ -61,6 +61,7 @@ const sharedTransition = {
 export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCategoryBarProps>(
   ({ className, items, activeItem, onItemClick }, ref) => {
     const isMobile = useIsMobile();
+    const isVerySmallScreen = useIsVerySmallScreen();
     
     const getGradient = (id: string) => {
       switch(id) {
@@ -104,7 +105,8 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
           "p-2 rounded-2xl bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-lg border border-border/40 shadow-lg relative overflow-hidden",
           className,
         )}
-        {...motionProps}
+        initial="initial"
+        whileHover="hover"
       >
         <motion.div
           className="absolute -inset-2 bg-gradient-radial from-transparent via-blue-400/20 via-30% via-purple-400/20 via-60% via-red-400/20 via-90% to-transparent rounded-3xl z-0 pointer-events-none"
@@ -112,13 +114,17 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
         />
         <ul className={cn(
           "flex items-center gap-2 relative z-10",
-          isMobile && "gap-1" // Reduce gap on mobile
+          isMobile && "gap-1", // Reduce gap on mobile
+          isVerySmallScreen && "gap-0.5" // Further reduce gap on very small screens
         )}>
           {items.map((item) => {
             const Icon = item.icon;
             const isActive = item.id === activeItem;
             const iconColor = getIconColor(item.id);
             const gradient = getGradient(item.id);
+
+            // For very small screens, we'll show only icons for non-active items
+            const showTextOnMobile = !isVerySmallScreen || isActive;
 
             return (
               <motion.li key={item.id} className="relative">
@@ -148,7 +154,8 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                         isActive
                           ? "text-foreground"
                           : "text-muted-foreground group-hover:text-foreground",
-                        isMobile && "px-2 py-1.5 text-sm gap-1.5" // Smaller padding and text on mobile
+                        isMobile && "px-2 py-1.5 text-sm gap-1.5", // Smaller padding and text on mobile
+                        isVerySmallScreen && "px-1.5 py-1.5 text-xs gap-1" // Even smaller on very small screens
                       )}
                       variants={itemVariants}
                       transition={sharedTransition}
@@ -163,9 +170,14 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                           isActive ? iconColor : "text-foreground",
                         )}
                       >
-                        <Icon className={cn("h-5 w-5", isMobile && "h-4 w-4")} />
+                        <Icon className={cn(
+                          "h-5 w-5", 
+                          isMobile && "h-4 w-4",
+                          isVerySmallScreen && "h-3.5 w-3.5"
+                        )} />
                       </span>
-                      <span>{item.name}</span>
+                      {/* Only show text on larger screens or for active item on very small screens */}
+                      {(showTextOnMobile) && <span>{item.name}</span>}
                     </motion.div>
                     <motion.div
                       className={cn(
@@ -173,7 +185,8 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                         isActive
                           ? "text-foreground"
                           : "text-muted-foreground group-hover:text-foreground",
-                        isMobile && "px-2 py-1.5 text-sm gap-1.5" // Smaller padding and text on mobile
+                        isMobile && "px-2 py-1.5 text-sm gap-1.5", // Smaller padding and text on mobile
+                        isVerySmallScreen && "px-1.5 py-1.5 text-xs gap-1" // Even smaller on very small screens
                       )}
                       variants={backVariants}
                       transition={sharedTransition}
@@ -189,9 +202,14 @@ export const AnimatedCategoryBar = React.forwardRef<HTMLDivElement, AnimatedCate
                           isActive ? iconColor : "text-foreground",
                         )}
                       >
-                        <Icon className={cn("h-5 w-5", isMobile && "h-4 w-4")} />
+                        <Icon className={cn(
+                          "h-5 w-5", 
+                          isMobile && "h-4 w-4",
+                          isVerySmallScreen && "h-3.5 w-3.5"
+                        )} />
                       </span>
-                      <span>{item.name}</span>
+                      {/* Only show text on larger screens or for active item on very small screens */}
+                      {(showTextOnMobile) && <span>{item.name}</span>}
                     </motion.div>
                   </motion.div>
                 </button>
