@@ -26,6 +26,7 @@ const ALLOWED_PRODUCT_SITES = [
 const PRODUCT_CATEGORIES = [
   { id: 'clothing', name: 'בגדים' },
   { id: 'shoes', name: 'נעליים' },
+  { id: 'underwear', name: 'הלבשה תחתונה' },
   { id: 'electronics', name: 'אלקטרוניקה' },
   { id: 'other', name: 'אחר' }
 ];

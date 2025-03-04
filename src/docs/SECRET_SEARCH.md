@@ -67,6 +67,13 @@ The QC Posts feature includes a rating system that allows users to rate products
    - Shows the average rating and number of votes
    - Visual feedback when a user submits a rating
 
+4. **Product Categories**:
+   - Clothing (בגדים)
+   - Shoes (נעליים)
+   - Underwear (הלבשה תחתונה)
+   - Electronics (אלקטרוניקה)
+   - Other (אחר)
+
 ## Future Implementation
 
 To fully enhance this feature, you would need:

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -5,7 +6,7 @@ import Footer from '../components/Footer';
 import QCPost, { QCPostType } from '../components/QCPost';
 import AddQCPostForm from '../components/AddQCPostForm';
 import { Button } from '../components/ui/button';
-import { PlusCircle, X, Images, Shirt, ShoppingBag, Monitor } from 'lucide-react';
+import { PlusCircle, X, Images, Shirt, ShoppingBag, Monitor, Underwear } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { AnimatedCategoryBar } from '../components/ui/animated-category-bar';
 import { AnimatedTextCycle } from '../components/ui/animated-text-cycle';
@@ -16,6 +17,7 @@ const PRODUCT_CATEGORIES = [
   { id: 'all', name: 'הכל', icon: ShoppingBag },
   { id: 'clothing', name: 'בגדים', icon: Shirt },
   { id: 'shoes', name: 'נעליים', icon: ShoppingBag },
+  { id: 'underwear', name: 'הלבשה תחתונה', icon: Shirt },
   { id: 'electronics', name: 'אלקטרוניקה', icon: Monitor },
   { id: 'other', name: 'אחר', icon: Images }
 ];
