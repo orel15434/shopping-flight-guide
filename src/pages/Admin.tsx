@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -23,8 +24,8 @@ import { Trash2, Shield, LogOut, Info, Pencil, X, Image, Plus, Minus, Loader } f
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Admin = () => {
-  const [email, setEmail] = useState(ADMIN_EMAIL);
-  const [password, setPassword] = useState(ADMIN_PASSWORD);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -246,10 +247,15 @@ const Admin = () => {
   };
 
   const handleLogout = async () => {
-    await adminLogout();
-    setIsAuthenticated(false);
-    setIsAdmin(false);
-    toast.success("התנתקת בהצלחה");
+    try {
+      await adminLogout();
+      setIsAuthenticated(false);
+      setIsAdmin(false);
+      toast.success("התנתקת בהצלחה");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("אירעה שגיאה בהתנתקות");
+    }
   };
 
   if (!isAuthenticated) {
@@ -267,7 +273,7 @@ const Admin = () => {
               <Alert className="mb-4 bg-blue-50 text-blue-800 border-blue-200">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  המשתמש {ADMIN_EMAIL} הוא היחיד המורשה להתחבר למערכת הניהול (הסיסמה היא {ADMIN_PASSWORD})
+                  השתמש באימייל וסיסמה של מנהל המערכת
                 </AlertDescription>
               </Alert>
               

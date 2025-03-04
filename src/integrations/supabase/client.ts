@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -8,7 +9,7 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 // This avoids multiple instance warning
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
-// המידע הקבוע של המנהל
+// אימייל למנהל
 export const ADMIN_EMAIL = 'orelgame156@gmail.com';
 export const ADMIN_PASSWORD = 'Admin123!';
 
@@ -24,7 +25,7 @@ export const checkIsAdmin = async (email: string) => {
   }
 };
 
-// פונקצית התחברות מותאמת
+// פונקצית התחברות מותאמת - משתמשת ב-supabase auth כעת
 export const adminLogin = async (email: string, password: string) => {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -41,15 +42,30 @@ export const adminLogin = async (email: string, password: string) => {
 
 // פונקצית בדיקת חיבור - מעודכנת לבדיקת סשן אמיתי
 export const getAdminSession = async () => {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) console.error("Error getting session:", error);
-  return { data };
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Error getting session:", error);
+      return { data: { session: null } };
+    }
+    return { data };
+  } catch (error) {
+    console.error("Error getting session:", error);
+    return { data: { session: null } };
+  }
 };
 
-// פונקצית התנתקות
-export const adminLogout = () => {
-  localStorage.removeItem('admin_logged_in');
-  return { error: null };
+// פונקצית התנתקות - עם sign out אמיתי
+export const adminLogout = async () => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    localStorage.removeItem('admin_logged_in');
+    return { error: null };
+  } catch (error) {
+    console.error("Error in admin logout:", error);
+    return { error };
+  }
 };
 
 // Helper functions for QC Posts management
