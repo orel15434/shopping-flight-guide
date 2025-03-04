@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -22,7 +21,7 @@ const PRODUCT_CATEGORIES = [
 ];
 
 const ANIMATED_TEXTS = [
-  { content: "שתף את ה-QC שלך", color: "text-purple-500" },
+  { content: "שתף את ה-QC שלך", color: "text-blue-500" },
   { content: "דרג בקלות", color: "text-orange-500" },
   { content: "קנה בקלות", color: "text-sky-500" }
 ];

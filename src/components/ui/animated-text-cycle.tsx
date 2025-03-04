@@ -28,7 +28,7 @@ export function AnimatedTextCycle({
   }, [texts.length, interval]);
 
   return (
-    <div className={cn("relative h-[1.5em] overflow-hidden", className)}>
+    <div className={cn("relative h-[1.5em] overflow-hidden font-sans", className)}>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}
