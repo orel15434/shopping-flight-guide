@@ -46,11 +46,14 @@ export function AnimatedTextCycle({
   }, [texts.length, interval, initialLoad]);
 
   const currentText = texts[currentIndex].content;
+  // For RTL text, we need to reverse the stagger order (since Hebrew reads right-to-left)
+  // First reverse the string to get characters in visual RTL order, then map over them
+  const charactersArray = currentText.split('');
   
   return (
     <div className={cn("relative overflow-hidden font-sans", className)}>
       <div className="flex justify-center">
-        {currentText.split('').map((char, i) => (
+        {charactersArray.map((char, i) => (
           <motion.span
             key={`${char}-${i}-${currentIndex}`}
             className={texts[currentIndex].color}
@@ -61,7 +64,8 @@ export function AnimatedTextCycle({
             }}
             transition={{
               duration: 0.2, // Faster individual letter animation
-              delay: (initialLoad || isAnimating) ? i * 0.05 : 0, // Apply stagger for both initial and cycling animations
+              // For RTL, we need to stagger from right to left (highest index first)
+              delay: (initialLoad || isAnimating) ? (charactersArray.length - 1 - i) * 0.05 : 0,
               ease: "easeInOut"
             }}
           >
