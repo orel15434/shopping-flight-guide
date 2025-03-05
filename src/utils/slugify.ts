@@ -1,4 +1,5 @@
 
+
 /**
  * Creates a URL-friendly slug from a title
  * Handles Hebrew characters by removing them and using fallback text if needed
@@ -51,3 +52,4 @@ export const extractPostIdFromSlug = (slugWithId: string): string => {
   // If no UUID is found, return the original string
   return slugWithId;
 };
+
