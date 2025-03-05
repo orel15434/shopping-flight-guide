@@ -56,6 +56,7 @@ const QCPost = ({ post, onRate, onDelete, showDeleteButton = false }: QCPostProp
     if (url.includes('1688.com')) return '1688';
     if (url.includes('alibaba.com')) return 'Alibaba';
     if (url.includes('aliexpress.com')) return 'AliExpress';
+    if (url.includes('tmall.com')) return 'Tmall';
     return 'אתר חיצוני';
   };
   
