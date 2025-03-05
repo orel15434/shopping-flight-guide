@@ -19,12 +19,22 @@ export function AnimatedTextCycle({
 }: AnimatedTextCycleProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
+    // Initial entry animation
+    if (initialLoad) {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setIsAnimating(false);
+        setInitialLoad(false);
+      }, 800);
+    }
+    
     const timer = setInterval(() => {
       setIsAnimating(true);
       
-      // Change text after animation completes - faster animation (800ms instead of 1500ms)
+      // Change text after animation completes
       setTimeout(() => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % texts.length);
         setIsAnimating(false);
@@ -33,7 +43,7 @@ export function AnimatedTextCycle({
     }, interval);
 
     return () => clearInterval(timer);
-  }, [texts.length, interval]);
+  }, [texts.length, interval, initialLoad]);
 
   const currentText = texts[currentIndex].content;
   
@@ -44,14 +54,15 @@ export function AnimatedTextCycle({
           <motion.span
             key={`${char}-${i}-${currentIndex}`}
             className={texts[currentIndex].color}
-            initial={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{
               opacity: isAnimating && i < currentText.length ? 0 : 1,
-              y: isAnimating && i < currentText.length ? -15 : 0, // Reduced movement for smoother animation
+              y: isAnimating && i < currentText.length ? -15 : 
+                 initialLoad ? 0 : 0, // Initial entry animation or stable state
             }}
             transition={{
               duration: 0.2, // Faster individual letter animation
-              delay: isAnimating ? i * 0.05 : 0, // Faster stagger effect (0.05s instead of 0.1s)
+              delay: (initialLoad || isAnimating) ? i * 0.05 : 0, // Apply stagger for both initial and cycling animations
               ease: "easeInOut"
             }}
           >
