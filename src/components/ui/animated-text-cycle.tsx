@@ -18,27 +18,26 @@ export function AnimatedTextCycle({
   interval = 3000, // Default to 3 seconds per text
 }: AnimatedTextCycleProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
     // Initial entry animation
     if (initialLoad) {
-      setIsAnimating(true);
       setTimeout(() => {
-        setIsAnimating(false);
         setInitialLoad(false);
-      }, 800);
+      }, 1500); // Allow enough time for the full entry animation
     }
     
     const timer = setInterval(() => {
-      setIsAnimating(true);
+      // Start exit animation
+      setIsExiting(true);
       
-      // Change text after animation completes
+      // Change text after exit animation completes
       setTimeout(() => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % texts.length);
-        setIsAnimating(false);
-      }, 800); 
+        setIsExiting(false);
+      }, 1000); // Time for exit animation to complete
       
     }, interval);
 
@@ -46,8 +45,6 @@ export function AnimatedTextCycle({
   }, [texts.length, interval, initialLoad]);
 
   const currentText = texts[currentIndex].content;
-  // For RTL text, we need to reverse the stagger order (since Hebrew reads right-to-left)
-  // First reverse the string to get characters in visual RTL order, then map over them
   const charactersArray = currentText.split('');
   
   return (
@@ -57,15 +54,17 @@ export function AnimatedTextCycle({
           <motion.span
             key={`${char}-${i}-${currentIndex}`}
             className={texts[currentIndex].color}
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={{
-              opacity: isAnimating || initialLoad ? 0 : 1,
-              y: isAnimating || initialLoad ? 15 : 0
+              opacity: isExiting ? 0 : 1,
+              x: isExiting ? -20 : 0
             }}
             transition={{
               duration: 0.2, // Faster individual letter animation
-              // For RTL, we need to stagger from right to left (highest index first)
-              delay: (initialLoad || isAnimating) ? (charactersArray.length - 1 - i) * 0.05 : 0,
+              // For RTL, stagger from right to left (for both entry and exit)
+              delay: (initialLoad || isExiting) 
+                ? i * 0.05 // Right to left (0th index is rightmost character in Hebrew)
+                : 0,
               ease: "easeInOut"
             }}
           >
