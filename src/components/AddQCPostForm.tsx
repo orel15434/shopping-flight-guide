@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { nanoid } from 'nanoid';
 import { Button } from './ui/button';
@@ -19,9 +20,7 @@ const ALLOWED_PRODUCT_SITES = [
   'weidian.com',
   '1688.com',
   'alibaba.com',
-  'aliexpress.com',
-  'detail.tmall.com',
-  'tmall.com'
+  'aliexpress.com'
 ];
 
 const PRODUCT_CATEGORIES = [
@@ -169,7 +168,7 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
     if (!productLink) {
       newErrors.productLink = 'נא להזין קישור למוצר';
     } else if (!isValidProductLink(productLink)) {
-      newErrors.productLink = 'קישור לא תקין. ניתן להזין קישורים מ-Taobao, Weidian, 1688, Tmall, Alibaba או AliExpress בלבד';
+      newErrors.productLink = 'קישור לא תקין. ניתן להזין קישורים מ-Taobao, Weidian, 1688, Alibaba או AliExpress בלבד';
     }
     
     if (price === undefined) {
@@ -202,6 +201,7 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
         
         const slug = createSlug(title);
         
+        // Filter out empty notes
         const filteredNotes = notes.filter(note => note.trim() !== '');
         
         const newPost: QCPostType = {
@@ -219,6 +219,7 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
           price: price,
           weight: weight,
           slug: slug,
+          // Only include notes if there are actual non-empty notes
           notes: filteredNotes.length > 0 ? filteredNotes : undefined
         };
         
@@ -245,7 +246,7 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="ל��וגמה: נעלי NIKE Air Force 1"
+          placeholder="לדוגמה: נעלי NIKE Air Force 1"
           className={errors.title ? 'border-red-500' : ''}
         />
         {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
