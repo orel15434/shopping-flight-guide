@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase, fetchQCPosts, deleteQCPost } from '../integrations/supabase/client';
 import Header from '../components/Header';
@@ -13,6 +12,7 @@ import { AnimatedTextCycle } from '../components/ui/animated-text-cycle';
 import { useIsMobile, useIsVerySmallScreen, useIsExtraSmallScreen } from '../hooks/use-mobile';
 import { cn } from '../lib/utils';
 import { UnderwearIcon } from '../components/icons/UnderwearIcon';
+import { createSlug } from '../utils/slugify';
 
 const PRODUCT_CATEGORIES = [
   { id: 'all', name: 'הכל', icon: ShoppingBag },
@@ -70,7 +70,8 @@ const QCGallery = () => {
           price: typeof post.price === 'number' ? post.price : undefined,
           weight: typeof post.weight === 'number' ? post.weight : undefined,
           category: post.category || 'other',
-          notes: Array.isArray(post.notes) ? post.notes : []
+          notes: Array.isArray(post.notes) ? post.notes : [],
+          slug: post.slug || ''
         }));
         
         setPosts(formattedPosts);
@@ -91,6 +92,8 @@ const QCGallery = () => {
     try {
       console.log('Adding new post:', post);
       
+      const slug = createSlug(post.title);
+      
       const newPost = {
         title: post.title,
         description: post.description,
@@ -103,7 +106,8 @@ const QCGallery = () => {
         user_ratings: {},
         price: post.price,
         weight: post.weight,
-        notes: post.notes || []
+        notes: post.notes || [],
+        slug: slug
       };
       
       console.log('Prepared post for insertion:', newPost);
@@ -140,7 +144,8 @@ const QCGallery = () => {
           created_at: data.created_at,
           price: data.price,
           weight: data.weight,
-          notes: Array.isArray(data.notes) ? data.notes : []
+          notes: Array.isArray(data.notes) ? data.notes : [],
+          slug: data.slug || ''
         };
         
         setPosts([formattedPost, ...posts]);
@@ -162,7 +167,6 @@ const QCGallery = () => {
   };
 
   const handleRatePost = async (postId: string, rating: number) => {
-    // Update UI immediately for a better user experience
     setPosts(posts.map(post => {
       if (post.id === postId) {
         const newVotes = post.votes + 1;
