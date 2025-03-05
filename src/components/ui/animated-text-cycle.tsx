@@ -18,31 +18,47 @@ export function AnimatedTextCycle({
   interval = 3000, // Default to 3 seconds per text
 }: AnimatedTextCycleProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % texts.length);
+      setIsAnimating(true);
+      
+      // Change text after animation completes
+      setTimeout(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % texts.length);
+        setIsAnimating(false);
+      }, 1500); // Animation takes about 1.5 seconds to complete
+      
     }, interval);
 
     return () => clearInterval(timer);
   }, [texts.length, interval]);
 
+  const currentText = texts[currentIndex].content;
+  
   return (
-    <div className={cn("relative h-[1.5em] overflow-hidden font-sans", className)}>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentIndex}
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -50, opacity: 0 }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
-          className="absolute inset-0 w-full flex items-center justify-center"
-        >
-          <span className={texts[currentIndex].color}>
-            {texts[currentIndex].content}
-          </span>
-        </motion.div>
-      </AnimatePresence>
+    <div className={cn("relative overflow-hidden font-sans", className)}>
+      <div className="flex justify-center">
+        {currentText.split('').map((char, i) => (
+          <motion.span
+            key={`${char}-${i}-${currentIndex}`}
+            className={texts[currentIndex].color}
+            initial={{ opacity: 1 }}
+            animate={{
+              opacity: isAnimating && i < currentText.length ? 0 : 1,
+              y: isAnimating && i < currentText.length ? -20 : 0,
+            }}
+            transition={{
+              duration: 0.3,
+              delay: isAnimating ? i * 0.1 : 0, // Stagger effect from right to left (RTL)
+              ease: "easeInOut"
+            }}
+          >
+            {char === ' ' ? '\u00A0' : char}
+          </motion.span>
+        ))}
+      </div>
     </div>
   );
 }
