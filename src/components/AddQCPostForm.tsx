@@ -331,12 +331,12 @@ const AddQCPostForm = ({ onSubmit, onCancel }: AddQCPostFormProps) => {
           type="url"
           value={productLink}
           onChange={(e) => setProductLink(e.target.value)}
-          placeholder="הכנס קישור ל-Taobao, Weidian, 1688, Alibaba או AliExpress"
+          placeholder="הכנס קישור ל-Taobao, Weidian, 1688, Tmall, Alibaba או AliExpress"
           className={errors.productLink ? 'border-red-500' : ''}
         />
         {errors.productLink && <p className="mt-1 text-sm text-red-500">{errors.productLink}</p>}
         <p className="mt-1 text-xs text-muted-foreground">
-          ניתן להוסיף קישורים מהאתרים: Taobao, Weidian, 1688, Alibaba או AliExpress בלבד
+          ניתן להוסיף קישורים מהאתרים: Taobao, Weidian, 1688, Tmall, Alibaba או AliExpress בלבד
         </p>
       </div>
       
