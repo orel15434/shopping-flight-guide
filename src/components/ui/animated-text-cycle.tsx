@@ -56,9 +56,8 @@ export function AnimatedTextCycle({
             className={texts[currentIndex].color}
             initial={{ opacity: 0, y: 15 }}
             animate={{
-              opacity: isAnimating && i < currentText.length ? 0 : 1,
-              y: isAnimating && i < currentText.length ? -15 : 
-                 initialLoad ? 0 : 0, // Initial entry animation or stable state
+              opacity: isAnimating || initialLoad ? 0 : 1,
+              y: isAnimating || initialLoad ? 15 : 0
             }}
             transition={{
               duration: 0.2, // Faster individual letter animation
