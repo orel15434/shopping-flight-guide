@@ -1,7 +1,7 @@
-
 import { useState, useMemo } from 'react';
 import { Package2, Search, Calculator, ThumbsUp, Zap } from 'lucide-react';
 import { Input } from './ui/input';
+import { Button } from './ui/button';
 
 interface ShippingRate {
   weightRange: string;
@@ -22,15 +22,20 @@ interface ShippingMethodOption {
   description: string;
   deliveryTime: string;
   maxWeight: number;
+  minWeight?: number;
   minDeliveryDays: number;
   maxDeliveryDays: number;
-  // New property for dynamic calculation
   dynamicCalculation?: {
-    baseFee: number;
-    baseWeight: number;
-    additionalFeePerUnit: number;
-    unitWeight: number;
-    maxWeightGrams: number;
+    firstPrice?: number;
+    continuedPricePerUnit?: number;
+    carrierProcessingFee?: number;
+    operationFee?: number;
+    minWeightGrams?: number;
+    maxWeightGrams?: number;
+    baseFee?: number;
+    baseWeight?: number;
+    additionalFeePerUnit?: number;
+    unitWeight?: number;
   };
 }
 
@@ -65,52 +70,33 @@ const agentShippingOptions: AgentShippingOptions[] = [
     ]
   },
   {
-    id: "basetao",
-    name: "Basetao",
-    methods: [
-      {
-        id: "eub",
-        name: "EUB",
-        prices: [
-          { weight: 1, price: 17.22 },
-          { weight: 2, price: 30.94 },
-          { weight: 3, price: 44.48 },
-          { weight: 4, price: 58.11 },
-          { weight: 5, price: 71.74 }
-        ],
-        description: "שירות חסכוני ומהימן, מתאים למשלוחים עד 5 ק״ג",
-        deliveryTime: "15-20 ימים",
-        maxWeight: 5,
-        minDeliveryDays: 15,
-        maxDeliveryDays: 20
-      }
-    ]
-  },
-  {
     id: "kakobuy",
     name: "KAKOBUY",
     methods: [
       {
         id: "eub",
         name: "EUB",
-        prices: [
-          { weight: 1, price: 17.47 }, // הוספתי מחיר ל-1 קילו
-          { weight: 2, price: 30.31 },
-          { weight: 3, price: 43.15 },
-          { weight: 4, price: 55.99 },
-          { weight: 5, price: 68.83 }
-        ],
-        description: "שירות חסכוני ומהימן, מתאים למשלוחים עד 5 ק״ג",
+        prices: [], // Empty array since we're using dynamic calculation
+        description: "שירות חסכוני ומהימן, מתאים למשלוחים עד 2 ק״ג",
         deliveryTime: "15-20 ימים",
-        maxWeight: 5,
+        maxWeight: 2,
+        minWeight: 0.2,
         minDeliveryDays: 15,
-        maxDeliveryDays: 20
+        maxDeliveryDays: 20,
+        dynamicCalculation: {
+          firstPrice: 1.55, // Base fee for first 100g
+          continuedPricePerUnit: 1.30, // Fee per additional 100g
+          carrierProcessingFee: 3.24, // Carrier processing fee
+          operationFee: 1.18, // Operation fee
+          minWeightGrams: 200, // Minimum weight in grams
+          maxWeightGrams: 2000 // Maximum weight in grams
+        }
       },
       {
         id: "israel-line-f",
         name: "Israel Line-F",
         prices: [
-          { weight: 1, price: 18.9 }, // הוספתי מחיר ל-1 קילו
+          { weight: 1, price: 18.9 }, 
           { weight: 2, price: 32.47 },
           { weight: 3, price: 46.04 },
           { weight: 4, price: 59.61 },
@@ -200,41 +186,34 @@ const ShippingCosts = () => {
       )
     : shippingRates;
 
-  // מחשבון החדש
-  const [selectedAgent, setSelectedAgent] = useState<string>(agentShippingOptions[0].id);
-  const [selectedMethod, setSelectedMethod] = useState<string>(agentShippingOptions[0].methods[0].id);
-  const [packageWeight, setPackageWeight] = useState<number>(1000); // כברירת מחדל מוגדר כעת ל-1000 גרם
+  const [selectedAgent, setSelectedAgent] = useState<string>("kakobuy");
+  const [selectedMethod, setSelectedMethod] = useState<string>("eub");
+  const [packageWeight, setPackageWeight] = useState<number>(1000); // כברירת מחדל מוגדר ל-1000 גרם
 
-  // מצא את הסוכן הנבחר
   const currentAgent = agentShippingOptions.find(agent => agent.id === selectedAgent);
   
-  // מצא את שיטת המשלוח הנבחרת
   const currentMethod = currentAgent?.methods.find(method => method.id === selectedMethod);
 
-  // פונקציה לחישוב דינמי של עלויות CSSBUY
-  const calculateDynamicCost = (weightGrams: number, dynamicConfig: ShippingMethodOption['dynamicCalculation']) => {
+  const calculateCSSBUYCost = (weightGrams: number, dynamicConfig: ShippingMethodOption['dynamicCalculation']) => {
     if (!dynamicConfig) return 0;
     
     if (weightGrams <= 0) return 0;
-    if (weightGrams > dynamicConfig.maxWeightGrams) return -1; // חריגת משקל
+    if (dynamicConfig.maxWeightGrams && weightGrams > dynamicConfig.maxWeightGrams) return -1; // חריגת משקל
     
-    // חישוב מחיר לפי נוסחה דינמית
     const { baseFee, baseWeight, additionalFeePerUnit, unitWeight } = dynamicConfig;
     
-    // מספר יחידות מלאות מעבר למשקל הבסיס
+    if (!baseFee || !baseWeight || !additionalFeePerUnit || !unitWeight) return 0;
+    
     const fullUnits = Math.floor((weightGrams - baseWeight) / unitWeight);
     
-    // שארית גרמים מעבר ליחידות המלאות
     const remainingGrams = (weightGrams - baseWeight) % unitWeight;
     
     let cost = baseFee;
     
-    // הוסף עלות עבור יחידות מלאות
     if (fullUnits > 0) {
       cost += fullUnits * additionalFeePerUnit;
     }
     
-    // הוסף עלות יחסית עבור שארית המשקל
     if (remainingGrams > 0) {
       cost += (remainingGrams / unitWeight) * additionalFeePerUnit;
     }
@@ -242,25 +221,56 @@ const ShippingCosts = () => {
     return cost;
   };
 
-  // חשב את עלות המשלוח לפי הטבלת מחירים או החישוב הדינמי
+  const calculateKakobuyEUBCost = (weightGrams: number, dynamicConfig: ShippingMethodOption['dynamicCalculation']) => {
+    if (!dynamicConfig) return 0;
+    
+    const {
+      firstPrice = 0,
+      continuedPricePerUnit = 0,
+      carrierProcessingFee = 0,
+      operationFee = 0,
+      minWeightGrams = 0,
+      maxWeightGrams = 0
+    } = dynamicConfig;
+    
+    if (minWeightGrams && weightGrams < minWeightGrams) return -2; // משקל מינימלי
+    if (maxWeightGrams && weightGrams > maxWeightGrams) return -1; // חריגת משקל מקסימלי
+    
+    const fullUnits = Math.floor((weightGrams - 100) / 100);
+    const remainingGrams = (weightGrams - 100) % 100;
+    
+    let baseCost = firstPrice;
+    
+    if (fullUnits > 0) {
+      baseCost += fullUnits * continuedPricePerUnit;
+    }
+    
+    if (remainingGrams > 0) {
+      baseCost += (remainingGrams / 100) * continuedPricePerUnit;
+    }
+    
+    const totalCost = baseCost + carrierProcessingFee + operationFee;
+    
+    return totalCost;
+  };
+
   const calculateShippingCost = () => {
     if (!currentMethod) return 0;
     
-    // המרת משקל מגרמים לקילוגרמים לצורך השוואה עם המשקל המקסימלי המוגדר בקילוגרמים
+    if (currentMethod.dynamicCalculation) {
+      if (selectedAgent === "cssbuy" && selectedMethod === "eub") {
+        return calculateCSSBUYCost(packageWeight, currentMethod.dynamicCalculation);
+      } else if (selectedAgent === "kakobuy" && selectedMethod === "eub") {
+        return calculateKakobuyEUBCost(packageWeight, currentMethod.dynamicCalculation);
+      }
+    }
+    
     const weightInKg = packageWeight / 1000;
     
-    // בדיקה אם המשקל גדול מהמקסימום המותר לשיטה זו
     if (weightInKg > currentMethod.maxWeight) {
-      return -1; // קוד שגיאה למשקל חורג
+      return -1;
     }
     
-    // במידה ויש חישוב דינמי, השתמש בו
-    if (currentMethod.dynamicCalculation) {
-      return calculateDynamicCost(packageWeight, currentMethod.dynamicCalculation);
-    }
-    
-    // אחרת, חשב לפי טבלת המחירים הקבועה
-    // מצא את נקודת המחיר הקרובה ביותר למשקל המבוקש (עיגול כלפי מעלה)
     const pricePoint = [...currentMethod.prices]
       .sort((a, b) => a.weight - b.weight)
       .find(point => point.weight >= weightInKg);
@@ -268,27 +278,24 @@ const ShippingCosts = () => {
     if (pricePoint) {
       return pricePoint.price;
     } else if (currentMethod.prices.length > 0) {
-      // אם אין מחיר מדויק, קח את המחיר לפי המשקל הגדול ביותר
       const highestPricePoint = currentMethod.prices.reduce(
         (max, point) => (point.weight > max.weight ? point : max),
         currentMethod.prices[0]
       );
       
-      // חישוב פשוט: יחס ליניארי
       return (weightInKg / highestPricePoint.weight) * highestPricePoint.price;
     }
     
     return 0;
   };
 
-  // המרת דולר לשקל
   const shippingCostUSD = calculateShippingCost();
+  
+  const isWeightExceeded = shippingCostUSD === -1;
+  const isWeightBelowMinimum = shippingCostUSD === -2;
+  
   const shippingCostILS = shippingCostUSD > 0 ? shippingCostUSD * dollarToShekelRate : -1;
 
-  // בדיקה אם המשקל חורג מהמקסימום המותר
-  const isWeightExceeded = shippingCostUSD === -1;
-
-  // טיפול בשינוי הסוכן - איפוס שיטת המשלוח לברירת המחדל של הסוכן החדש
   const handleAgentChange = (agentId: string) => {
     setSelectedAgent(agentId);
     const newAgent = agentShippingOptions.find(agent => agent.id === agentId);
@@ -297,7 +304,6 @@ const ShippingCosts = () => {
     }
   };
 
-  // מצא את כל שיטות המשלוח האפשריות עבור המשקל הנוכחי
   const availableShippingOptions = useMemo(() => {
     const options: Array<{
       agentId: string;
@@ -312,16 +318,13 @@ const ShippingCosts = () => {
     agentShippingOptions.forEach(agent => {
       agent.methods.forEach(method => {
         if (packageWeight <= method.maxWeight) {
-          // חישוב מחיר לשיטה זו - בדיקה אם יש חישוב דינמי
           let price = 0;
           
           if (method.dynamicCalculation) {
             price = calculateDynamicCost(packageWeight, method.dynamicCalculation);
             
-            // אם המשקל חורג, דלג על האפשרות הזו
             if (price === -1) return;
           } else {
-            // חישוב לפי טבלת מחירים רגילה
             const pricePoint = [...method.prices]
               .sort((a, b) => a.weight - b.weight)
               .find(point => point.weight >= packageWeight);
@@ -353,7 +356,6 @@ const ShippingCosts = () => {
     return options;
   }, [packageWeight]);
 
-  // מצא את האפשרות הזולה ביותר והמהירה ביותר
   const cheapestOption = useMemo(() => {
     return availableShippingOptions.length > 0
       ? availableShippingOptions.reduce((min, option) => 
@@ -368,8 +370,21 @@ const ShippingCosts = () => {
       : null;
   }, [availableShippingOptions]);
 
-  // ממיר משקל מקילוגרמים לגרמים להצגה
-  const weightInGrams = Math.round(packageWeight * 1000);
+  const getTestPrice = (weight: number, agent: string, method: string) => {
+    const testAgent = agentShippingOptions.find(a => a.id === agent);
+    const testMethod = testAgent?.methods.find(m => m.id === method);
+    
+    if (!testMethod || !testMethod.dynamicCalculation) return 'N/A';
+    
+    if (agent === "kakobuy" && method === "eub") {
+      const price = calculateKakobuyEUBCost(weight, testMethod.dynamicCalculation);
+      if (price === -1) return "חריגת משקל";
+      if (price === -2) return "מתחת למינימום";
+      return `$${price.toFixed(2)}`;
+    }
+    
+    return 'N/A';
+  };
 
   return (
     <section id="shipping-costs" className="section-padding">
@@ -385,7 +400,6 @@ const ShippingCosts = () => {
             </p>
           </div>
 
-          {/* Tab buttons */}
           <div className="flex justify-center mb-6">
             <div className="bg-secondary rounded-lg p-1 flex">
               <button
@@ -478,7 +492,21 @@ const ShippingCosts = () => {
                   <h3 className="text-xl font-medium">מחשבון עלויות משלוח</h3>
                 </div>
                 
-                {/* המלצות עבור המשלוח הזול והמהיר */}
+                {selectedAgent === "kakobuy" && selectedMethod === "eub" && (
+                  <div className="mb-8 bg-blue-50 border border-blue-100 rounded-lg p-4">
+                    <h4 className="font-medium mb-2 text-blue-700">מחירי Kakobuy EUB לבדיקה:</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                      <div className="bg-white p-2 rounded">200g: {getTestPrice(200, "kakobuy", "eub")}</div>
+                      <div className="bg-white p-2 rounded">500g: {getTestPrice(500, "kakobuy", "eub")}</div>
+                      <div className="bg-white p-2 rounded">1000g: {getTestPrice(1000, "kakobuy", "eub")}</div>
+                      <div className="bg-white p-2 rounded">1500g: {getTestPrice(1500, "kakobuy", "eub")}</div>
+                      <div className="bg-white p-2 rounded">2000g: {getTestPrice(2000, "kakobuy", "eub")}</div>
+                      <div className="bg-white p-2 rounded">2350g: {getTestPrice(2350, "kakobuy", "eub")}</div>
+                      <div className="bg-white p-2 rounded">100g: {getTestPrice(100, "kakobuy", "eub")}</div>
+                    </div>
+                  </div>
+                )}
+                
                 {availableShippingOptions.length > 0 && (
                   <div className="mb-8 bg-secondary/20 rounded-xl p-5">
                     <h4 className="text-lg font-medium text-center mb-4">המלצות משלוח</h4>
@@ -521,7 +549,6 @@ const ShippingCosts = () => {
                 )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  {/* בחירת סוכן */}
                   <div>
                     <label htmlFor="agent" className="block mb-2 font-medium">
                       בחר סוכן
@@ -540,7 +567,6 @@ const ShippingCosts = () => {
                     </select>
                   </div>
 
-                  {/* בחירת שיטת משלוח */}
                   <div>
                     <label htmlFor="shipping-method" className="block mb-2 font-medium">
                       שיטת משלוח
@@ -552,15 +578,15 @@ const ShippingCosts = () => {
                       className="glass-card w-full py-3 px-4 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       {currentAgent?.methods.map((method) => (
-                        <option key={method.id} value={method.id} disabled={packageWeight/1000 > method.maxWeight}>
+                        <option key={method.id} value={method.id}>
                           {method.name} (עד {method.maxWeight} ק"ג)
+                          {method.minWeight ? ` | מינימום ${method.minWeight} ק"ג` : ''}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                {/* פרטי שיטת המשלוח */}
                 {currentMethod && (
                   <div className="bg-secondary/30 rounded-lg p-4 mb-6">
                     <h4 className="font-medium mb-2">{currentMethod.name}</h4>
@@ -571,6 +597,11 @@ const ShippingCosts = () => {
                     <div className="text-sm mt-2 text-muted-foreground">
                       מקסימום משקל לשליחה: <span className="font-medium">{currentMethod.maxWeight} ק"ג ({currentMethod.maxWeight * 1000} גרם)</span>
                     </div>
+                    {currentMethod.minWeight && (
+                      <div className="text-sm mt-1 text-muted-foreground">
+                        מינימום משקל לשליחה: <span className="font-medium">{currentMethod.minWeight} ק"ג ({currentMethod.minWeight * 1000} גרם)</span>
+                      </div>
+                    )}
                     {currentMethod.dynamicCalculation && (
                       <div className="mt-2 text-sm text-primary">
                         חישוב מחיר: דינמי לפי משקל מדויק
@@ -579,7 +610,6 @@ const ShippingCosts = () => {
                   </div>
                 )}
                 
-                {/* הזנת משקל - עדכון להזנת גרמים */}
                 <div className="mb-8">
                   <label htmlFor="weight" className="block mb-2 font-medium">
                     משקל החבילה (בגרמים)
@@ -600,7 +630,6 @@ const ShippingCosts = () => {
                   </div>
                 </div>
                 
-                {/* תוצאת החישוב */}
                 <div className="glass-card rounded-xl overflow-hidden bg-white">
                   <div className="bg-primary/10 p-4 text-center">
                     <h4 className="font-medium">עלות משלוח משוערת עבור {packageWeight} גרם</h4>
@@ -611,7 +640,21 @@ const ShippingCosts = () => {
                         <p className="font-medium">חריגת משקל!</p>
                         <p className="text-sm mt-1">
                           המשקל שהוזן ({packageWeight} גרם / {(packageWeight / 1000).toFixed(2)} ק"ג) חורג מהמשקל המקסימלי 
-                          ({currentMethod?.maxWeight} ק"ג) עבור שיטת המשלוח הנבחרת.
+                          {currentMethod?.dynamicCalculation?.maxWeightGrams
+                            ? ` (${currentMethod.dynamicCalculation.maxWeightGrams} גרם)`
+                            : ` (${currentMethod?.maxWeight} ק"ג)`
+                          } עבור שיטת המשלוח הנבחרת.
+                        </p>
+                      </div>
+                    ) : isWeightBelowMinimum ? (
+                      <div className="text-center py-4 text-yellow-500">
+                        <p className="font-medium">משקל מתחת למינימום!</p>
+                        <p className="text-sm mt-1">
+                          המשקל שהוזן ({packageWeight} גרם / {(packageWeight / 1000).toFixed(2)} ק"ג) נמוך מהמשקל המינימלי 
+                          {currentMethod?.dynamicCalculation?.minWeightGrams
+                            ? ` (${currentMethod.dynamicCalculation.minWeightGrams} גרם)`
+                            : ` (${currentMethod?.minWeight} ק"ג)`
+                          } עבור שיטת המשלוח הנבחרת.
                         </p>
                       </div>
                     ) : (
@@ -629,13 +672,27 @@ const ShippingCosts = () => {
                   </div>
                 </div>
                 
-                {currentMethod?.dynamicCalculation && (
+                {selectedAgent === "kakobuy" && selectedMethod === "eub" && (
                   <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm">
-                    <div className="font-medium mb-1 text-blue-700">אודות מחשבון דינמי CSSBUY EUB:</div>
+                    <div className="font-medium mb-1 text-blue-700">אודות מחשבון Kakobuy EUB:</div>
                     <p className="text-blue-600">
                       מחיר המשלוח מחושב באופן דינמי לפי המשקל המדויק בגרמים:
-                      {currentMethod.dynamicCalculation.baseFee}$ עבור {currentMethod.dynamicCalculation.baseWeight} הגרמים הראשונים,
-                      ו-{currentMethod.dynamicCalculation.additionalFeePerUnit}$ לכל {currentMethod.dynamicCalculation.unitWeight} גרם נוספים.
+                      <br />- $1.55 עבור 100 הגרמים הראשונים
+                      <br />- $1.30 לכל 100 גרם נוספים
+                      <br />- $3.24 עמלת עיבוד קבועה
+                      <br />- $1.18 עמלה תפעולית קבועה
+                      <br />- טווח משקלים: 200-2000 גרם (0.2-2 ק"ג)
+                    </p>
+                  </div>
+                )}
+                
+                {selectedAgent === "cssbuy" && selectedMethod === "eub" && (
+                  <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm">
+                    <div className="font-medium mb-1 text-blue-700">אודות מחשבון CSSBUY EUB:</div>
+                    <p className="text-blue-600">
+                      מחיר המשלוח מחושב באופן דינמי לפי המשקל המדויק בגרמים:
+                      {currentMethod?.dynamicCalculation?.baseFee}$ עבור {currentMethod?.dynamicCalculation?.baseWeight} הגרמים הראשונים,
+                      ו-{currentMethod?.dynamicCalculation?.additionalFeePerUnit}$ לכל {currentMethod?.dynamicCalculation?.unitWeight} גרם נוספים.
                     </p>
                   </div>
                 )}
@@ -649,7 +706,7 @@ const ShippingCosts = () => {
                       </p>
                       <ul className="space-y-1 list-disc pr-5">
                         <li>המחירים המוצגים הם הערכה בלבד ומבוססים על נתוני הסוכנים השונים.</li>
-                        <li>לכל סוכן יש מגבלות משקל שונות. למשל, CSSBUY מאפשר שליחה באמצעות EUB עד 3 ק"ג (3000 גרם) בלבד.</li>
+                        <li>לכל סוכן יש מגבלות משקל שונות. למשל, KAKOBUY מאפשר שליחה באמצעות EUB בין 200 ל-2000 גרם בלבד.</li>
                         <li>שער ההמרה לשקל הוא משוער (שער נוכחי: ${dollarToShekelRate} ₪ לדולר).</li>
                         <li>המחיר הסופי עשוי להשתנות בהתאם לממדי החבילה ומדיניות חברת המשלוחים.</li>
                       </ul>
