@@ -203,7 +203,7 @@ const ShippingCosts = () => {
   // מחשבון החדש
   const [selectedAgent, setSelectedAgent] = useState<string>(agentShippingOptions[0].id);
   const [selectedMethod, setSelectedMethod] = useState<string>(agentShippingOptions[0].methods[0].id);
-  const [packageWeight, setPackageWeight] = useState<number>(1); // כברירת מחדל מוגדר כעת ל-1 קילו
+  const [packageWeight, setPackageWeight] = useState<number>(1000); // כברירת מחדל מוגדר כעת ל-1000 גרם
 
   // מצא את הסוכן הנבחר
   const currentAgent = agentShippingOptions.find(agent => agent.id === selectedAgent);
@@ -212,10 +212,8 @@ const ShippingCosts = () => {
   const currentMethod = currentAgent?.methods.find(method => method.id === selectedMethod);
 
   // פונקציה לחישוב דינמי של עלויות CSSBUY
-  const calculateDynamicCost = (weightKg: number, dynamicConfig: ShippingMethodOption['dynamicCalculation']) => {
+  const calculateDynamicCost = (weightGrams: number, dynamicConfig: ShippingMethodOption['dynamicCalculation']) => {
     if (!dynamicConfig) return 0;
-    
-    const weightGrams = weightKg * 1000;
     
     if (weightGrams <= 0) return 0;
     if (weightGrams > dynamicConfig.maxWeightGrams) return -1; // חריגת משקל
@@ -248,8 +246,11 @@ const ShippingCosts = () => {
   const calculateShippingCost = () => {
     if (!currentMethod) return 0;
     
+    // המרת משקל מגרמים לקילוגרמים לצורך השוואה עם המשקל המקסימלי המוגדר בקילוגרמים
+    const weightInKg = packageWeight / 1000;
+    
     // בדיקה אם המשקל גדול מהמקסימום המותר לשיטה זו
-    if (packageWeight > currentMethod.maxWeight) {
+    if (weightInKg > currentMethod.maxWeight) {
       return -1; // קוד שגיאה למשקל חורג
     }
     
@@ -262,7 +263,7 @@ const ShippingCosts = () => {
     // מצא את נקודת המחיר הקרובה ביותר למשקל המבוקש (עיגול כלפי מעלה)
     const pricePoint = [...currentMethod.prices]
       .sort((a, b) => a.weight - b.weight)
-      .find(point => point.weight >= packageWeight);
+      .find(point => point.weight >= weightInKg);
     
     if (pricePoint) {
       return pricePoint.price;
@@ -274,7 +275,7 @@ const ShippingCosts = () => {
       );
       
       // חישוב פשוט: יחס ליניארי
-      return (packageWeight / highestPricePoint.weight) * highestPricePoint.price;
+      return (weightInKg / highestPricePoint.weight) * highestPricePoint.price;
     }
     
     return 0;
@@ -551,7 +552,7 @@ const ShippingCosts = () => {
                       className="glass-card w-full py-3 px-4 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       {currentAgent?.methods.map((method) => (
-                        <option key={method.id} value={method.id} disabled={packageWeight > method.maxWeight}>
+                        <option key={method.id} value={method.id} disabled={packageWeight/1000 > method.maxWeight}>
                           {method.name} (עד {method.maxWeight} ק"ג)
                         </option>
                       ))}
@@ -568,7 +569,7 @@ const ShippingCosts = () => {
                       <span>זמן משלוח משוער: {currentMethod.deliveryTime}</span>
                     </div>
                     <div className="text-sm mt-2 text-muted-foreground">
-                      מקסימום משקל לשליחה: <span className="font-medium">{currentMethod.maxWeight} ק"ג</span>
+                      מקסימום משקל לשליחה: <span className="font-medium">{currentMethod.maxWeight} ק"ג ({currentMethod.maxWeight * 1000} גרם)</span>
                     </div>
                     {currentMethod.dynamicCalculation && (
                       <div className="mt-2 text-sm text-primary">
@@ -578,39 +579,38 @@ const ShippingCosts = () => {
                   </div>
                 )}
                 
-                {/* הזנת משקל */}
+                {/* הזנת משקל - עדכון להזנת גרמים */}
                 <div className="mb-8">
                   <label htmlFor="weight" className="block mb-2 font-medium">
-                    משקל החבילה (בק״ג)
+                    משקל החבילה (בגרמים)
                   </label>
                   <input
                     type="number"
                     id="weight"
-                    min="0.1"
-                    max="30"
-                    step="0.1"
+                    min="1"
+                    max="30000"
+                    step="1"
                     value={packageWeight}
                     onChange={(e) => setPackageWeight(Number(e.target.value))}
                     className="glass-card w-full py-3 px-4 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="למשל: 2000 עבור 2 ק״ג"
                   />
-                  {currentMethod?.dynamicCalculation && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      משקל בגרמים: <span className="font-medium">{weightInGrams} גרם</span>
-                    </div>
-                  )}
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    משקל בקילוגרמים: <span className="font-medium">{(packageWeight / 1000).toFixed(2)} ק"ג</span>
+                  </div>
                 </div>
                 
                 {/* תוצאת החישוב */}
                 <div className="glass-card rounded-xl overflow-hidden bg-white">
                   <div className="bg-primary/10 p-4 text-center">
-                    <h4 className="font-medium">עלות משלוח משוערת</h4>
+                    <h4 className="font-medium">עלות משלוח משוערת עבור {packageWeight} גרם</h4>
                   </div>
                   <div className="p-6">
                     {isWeightExceeded ? (
                       <div className="text-center py-4 text-red-500">
                         <p className="font-medium">חריגת משקל!</p>
                         <p className="text-sm mt-1">
-                          המשקל שהוזן ({packageWeight} ק"ג) חורג מהמשקל המקסימלי 
+                          המשקל שהוזן ({packageWeight} גרם / {(packageWeight / 1000).toFixed(2)} ק"ג) חורג מהמשקל המקסימלי 
                           ({currentMethod?.maxWeight} ק"ג) עבור שיטת המשלוח הנבחרת.
                         </p>
                       </div>
@@ -649,7 +649,7 @@ const ShippingCosts = () => {
                       </p>
                       <ul className="space-y-1 list-disc pr-5">
                         <li>המחירים המוצגים הם הערכה בלבד ומבוססים על נתוני הסוכנים השונים.</li>
-                        <li>לכל סוכן יש מגבלות משקל שונות. למשל, CSSBUY מאפשר שליחה באמצעות EUB עד 3 ק"ג בלבד.</li>
+                        <li>לכל סוכן יש מגבלות משקל שונות. למשל, CSSBUY מאפשר שליחה באמצעות EUB עד 3 ק"ג (3000 גרם) בלבד.</li>
                         <li>שער ההמרה לשקל הוא משוער (שער נוכחי: ${dollarToShekelRate} ₪ לדולר).</li>
                         <li>המחיר הסופי עשוי להשתנות בהתאם לממדי החבילה ומדיניות חברת המשלוחים.</li>
                       </ul>
