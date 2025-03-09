@@ -57,6 +57,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         description: "שירות חסכוני ומהימן, מתאים למשלוחים קטנים עד 3 ק״ג",
         deliveryTime: "15-30 ימים",
         maxWeight: 3,
+        minWeight: 0.2,
         minDeliveryDays: 15,
         maxDeliveryDays: 30,
         dynamicCalculation: {
@@ -252,6 +253,18 @@ const ShippingCosts = () => {
     const totalCost = baseCost + carrierProcessingFee + operationFee;
     
     return totalCost;
+  };
+
+  const calculateDynamicCost = (weightGrams: number, dynamicConfig: ShippingMethodOption['dynamicCalculation']) => {
+    if (!dynamicConfig) return 0;
+    
+    if (selectedAgent === "cssbuy" && selectedMethod === "eub") {
+      return calculateCSSBUYCost(weightGrams, dynamicConfig);
+    } else if (selectedAgent === "kakobuy" && selectedMethod === "eub") {
+      return calculateKakobuyEUBCost(weightGrams, dynamicConfig);
+    }
+    
+    return 0;
   };
 
   const calculateShippingCost = () => {
