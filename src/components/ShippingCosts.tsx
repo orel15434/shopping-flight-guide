@@ -1,7 +1,7 @@
-
-import { useState, useMemo } from 'react';
-import { Package2, Search, Calculator, ThumbsUp, Zap } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Package2, Search, Calculator, ThumbsUp, Zap, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
+import { fetchCSSBUYShippingRates, formatCSSBUYShippingData } from '../utils/shippingUtils';
 
 interface ShippingRate {
   weightRange: string;
@@ -192,7 +192,7 @@ const dollarToShekelRate = 3.7; // המרה משוערת
 
 const ShippingCosts = () => {
   const [searchWeight, setSearchWeight] = useState("");
-  const [activeTab, setActiveTab] = useState<'table' | 'calculator'>('table');
+  const [activeTab, setActiveTab] = useState<'table' | 'calculator'>('calculator');
 
   const filteredRates = searchWeight
     ? shippingRates.filter(rate => 
@@ -204,6 +204,12 @@ const ShippingCosts = () => {
   const [selectedAgent, setSelectedAgent] = useState<string>(agentShippingOptions[0].id);
   const [selectedMethod, setSelectedMethod] = useState<string>(agentShippingOptions[0].methods[0].id);
   const [packageWeight, setPackageWeight] = useState<number>(1000); // כברירת מחדל מוגדר כעת ל-1000 גרם
+  
+  // State for CSSBUY API results
+  const [cssbuySippingOptions, setCSSBUYShippingOptions] = useState<any[]>([]);
+  const [isLoadingCSS, setIsLoadingCSS] = useState(false);
+  const [cssApiError, setCSSApiError] = useState<string | null>(null);
+  const [useCSBuyAPI, setUseCSBuyAPI] = useState<boolean>(false);
 
   // מצא את הסוכן הנבחר
   const currentAgent = agentShippingOptions.find(agent => agent.id === selectedAgent);
@@ -211,7 +217,7 @@ const ShippingCosts = () => {
   // מצא את שיטת המשלוח הנבחרת
   const currentMethod = currentAgent?.methods.find(method => method.id === selectedMethod);
 
-  // פונקציה לחישוב דינמי של עלויות CSSBUY
+  // פונקציה לחישוב דינמי של עלויות משלוח לפי הסוכן והשיטה
   const calculateDynamicCost = (weightGrams: number, dynamicConfig: ShippingMethodOption['dynamicCalculation']) => {
     if (!dynamicConfig) return 0;
     
@@ -242,6 +248,33 @@ const ShippingCosts = () => {
     return cost;
   };
 
+  // חישוב לפי שיטת Kakobuy EUB Pure Weight
+  const calculateKakobuyEUBPureWeight = (weightGrams: number) => {
+    const FIRST_PRICE = 1.55; // דולר ל-100 גרם הראשונים
+    const CONTINUED_PRICE_PER_100G = 1.30; // דולר לכל 100 גרם נוספים
+    const CARRIER_PROCESSING_FEE = 3.24; // עמלת עיבוד
+    const OPERATION_FEE = 1.18; // עמלה תפעולית
+    const MIN_WEIGHT = 200; // גרם
+    const MAX_WEIGHT = 2000; // גרם
+
+    if (weightGrams < MIN_WEIGHT) return -2; // Below minimum weight
+    if (weightGrams > MAX_WEIGHT) return -1; // Above maximum weight
+
+    const fullUnits = Math.floor((weightGrams - 100) / 100); // יחידות מלאות מעבר ל-100 גרם
+    const remainingGrams = (weightGrams - 100) % 100; // שארית גרמים
+
+    let baseCost = FIRST_PRICE;
+    if (fullUnits > 0) {
+      baseCost += fullUnits * CONTINUED_PRICE_PER_100G;
+    }
+    if (remainingGrams > 0) {
+      baseCost += (remainingGrams / 100) * CONTINUED_PRICE_PER_100G;
+    }
+
+    const totalCost = baseCost + CARRIER_PROCESSING_FEE + OPERATION_FEE;
+    return totalCost;
+  };
+
   // חשב את עלות המשלוח לפי הטבלת מחירים או החישוב הדינמי
   const calculateShippingCost = () => {
     if (!currentMethod) return 0;
@@ -252,6 +285,11 @@ const ShippingCosts = () => {
     // בדיקה אם המשקל גדול מהמקסימום המותר לשיטה זו
     if (weightInKg > currentMethod.maxWeight) {
       return -1; // קוד שגיאה למשקל חורג
+    }
+    
+    // בדיקה אם מדובר ב-Kakobuy EUB - Pure Weight
+    if (selectedAgent === "kakobuy" && selectedMethod === "eub") {
+      return calculateKakobuyEUBPureWeight(packageWeight);
     }
     
     // במידה ויש חישוב דינמי, השתמש בו
@@ -287,13 +325,44 @@ const ShippingCosts = () => {
 
   // בדיקה אם המשקל חורג מהמקסימום המותר
   const isWeightExceeded = shippingCostUSD === -1;
+  // בדיקה אם המשקל נמוך מהמינימום (עבור Kakobuy EUB)
+  const isBelowMinWeight = shippingCostUSD === -2;
 
   // טיפול בשינוי הסוכן - איפוס שיטת המשלוח לברירת המחדל של הסוכן החדש
   const handleAgentChange = (agentId: string) => {
     setSelectedAgent(agentId);
+    // אם בוחרים CSSBUY, אפשר להשתמש ב-API
+    setUseCSBuyAPI(agentId === "cssbuy");
+    
     const newAgent = agentShippingOptions.find(agent => agent.id === agentId);
     if (newAgent && newAgent.methods.length > 0) {
       setSelectedMethod(newAgent.methods[0].id);
+    }
+  };
+
+  // פונקציה לפתיחת חישוב באמצעות ה-API של CSSBUY
+  const fetchCSSBUYRates = async () => {
+    if (!packageWeight) return;
+    
+    setIsLoadingCSS(true);
+    setCSSApiError(null);
+    
+    try {
+      const response = await fetchCSSBUYShippingRates(packageWeight);
+      
+      if (response.error) {
+        setCSSApiError(response.message || "שגיאה בטעינת נתוני משלוח");
+        setCSSBUYShippingOptions([]);
+      } else {
+        const formattedOptions = formatCSSBUYShippingData(response);
+        setCSSBUYShippingOptions(formattedOptions);
+      }
+    } catch (error) {
+      console.error("Error fetching CSSBUY rates:", error);
+      setCSSApiError("שגיאה בטעינת נתוני משלוח");
+      setCSSBUYShippingOptions([]);
+    } finally {
+      setIsLoadingCSS(false);
     }
   };
 
@@ -311,7 +380,10 @@ const ShippingCosts = () => {
 
     agentShippingOptions.forEach(agent => {
       agent.methods.forEach(method => {
-        if (packageWeight <= method.maxWeight) {
+        // המרת משקל מגרמים לקילוגרמים לצורך השוואה עם המשקל המקסימלי המוגדר בקילוגרמים
+        const weightInKg = packageWeight / 1000;
+        
+        if (weightInKg <= method.maxWeight) {
           // חישוב מחיר לשיטה זו - בדיקה אם יש חישוב דינמי
           let price = 0;
           
@@ -324,7 +396,7 @@ const ShippingCosts = () => {
             // חישוב לפי טבלת מחירים רגילה
             const pricePoint = [...method.prices]
               .sort((a, b) => a.weight - b.weight)
-              .find(point => point.weight >= packageWeight);
+              .find(point => point.weight >= weightInKg);
             
             if (pricePoint) {
               price = pricePoint.price;
@@ -333,7 +405,7 @@ const ShippingCosts = () => {
                 (max, point) => (point.weight > max.weight ? point : max),
                 method.prices[0]
               );
-              price = (packageWeight / highestPricePoint.weight) * highestPricePoint.price;
+              price = (weightInKg / highestPricePoint.weight) * highestPricePoint.price;
             }
           }
 
@@ -368,8 +440,12 @@ const ShippingCosts = () => {
       : null;
   }, [availableShippingOptions]);
 
-  // ממיר משקל מקילוגרמים לגרמים להצגה
-  const weightInGrams = Math.round(packageWeight * 1000);
+  // קריאה ל-API כאשר המשקל משתנה ו-CSSBUY נבחר עם API מופעל
+  useEffect(() => {
+    if (selectedAgent === "cssbuy" && useCSBuyAPI) {
+      fetchCSSBUYRates();
+    }
+  }, [packageWeight, selectedAgent, useCSBuyAPI]);
 
   return (
     <section id="shipping-costs" className="section-padding">
@@ -557,11 +633,25 @@ const ShippingCosts = () => {
                         </option>
                       ))}
                     </select>
+                    
+                    {selectedAgent === "cssbuy" && (
+                      <div className="mt-2">
+                        <label className="flex items-center text-sm">
+                          <input
+                            type="checkbox"
+                            checked={useCSBuyAPI}
+                            onChange={(e) => setUseCSBuyAPI(e.target.checked)}
+                            className="mr-2"
+                          />
+                          <span>השתמש ב-API מקוון של CSSBUY (נסיוני)</span>
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* פרטי שיטת המשלוח */}
-                {currentMethod && (
+                {currentMethod && !useCSBuyAPI && (
                   <div className="bg-secondary/30 rounded-lg p-4 mb-6">
                     <h4 className="font-medium mb-2">{currentMethod.name}</h4>
                     <p className="text-muted-foreground text-sm mb-2">{currentMethod.description}</p>
@@ -599,70 +689,34 @@ const ShippingCosts = () => {
                     משקל בקילוגרמים: <span className="font-medium">{(packageWeight / 1000).toFixed(2)} ק"ג</span>
                   </div>
                 </div>
-                
-                {/* תוצאת החישוב */}
-                <div className="glass-card rounded-xl overflow-hidden bg-white">
-                  <div className="bg-primary/10 p-4 text-center">
-                    <h4 className="font-medium">עלות משלוח משוערת עבור {packageWeight} גרם</h4>
-                  </div>
-                  <div className="p-6">
-                    {isWeightExceeded ? (
-                      <div className="text-center py-4 text-red-500">
-                        <p className="font-medium">חריגת משקל!</p>
-                        <p className="text-sm mt-1">
-                          המשקל שהוזן ({packageWeight} גרם / {(packageWeight / 1000).toFixed(2)} ק"ג) חורג מהמשקל המקסימלי 
-                          ({currentMethod?.maxWeight} ק"ג) עבור שיטת המשלוח הנבחרת.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-4 text-center">
-                        <div className="p-3 bg-secondary/20 rounded-lg">
-                          <div className="text-sm text-muted-foreground mb-1">מחיר בדולר</div>
-                          <div className="text-xl font-medium">${shippingCostUSD.toFixed(2)}</div>
-                        </div>
-                        <div className="p-3 bg-secondary/20 rounded-lg">
-                          <div className="text-sm text-muted-foreground mb-1">מחיר בשקלים</div>
-                          <div className="text-xl font-medium">₪{shippingCostILS.toFixed(2)}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {currentMethod?.dynamicCalculation && (
-                  <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm">
-                    <div className="font-medium mb-1 text-blue-700">אודות מחשבון דינמי CSSBUY EUB:</div>
-                    <p className="text-blue-600">
-                      מחיר המשלוח מחושב באופן דינמי לפי המשקל המדויק בגרמים:
-                      {currentMethod.dynamicCalculation.baseFee}$ עבור {currentMethod.dynamicCalculation.baseWeight} הגרמים הראשונים,
-                      ו-{currentMethod.dynamicCalculation.additionalFeePerUnit}$ לכל {currentMethod.dynamicCalculation.unitWeight} גרם נוספים.
-                    </p>
-                  </div>
-                )}
-                
-                <div className="mt-6 bg-primary/5 rounded-lg p-4 text-sm text-muted-foreground">
-                  <div className="flex items-start">
-                    <Package2 size={18} className="ml-2 mt-0.5 text-primary flex-shrink-0" />
-                    <div>
-                      <p className="mb-1">
-                        <strong>אודות עלויות המשלוח:</strong>
-                      </p>
-                      <ul className="space-y-1 list-disc pr-5">
-                        <li>המחירים המוצגים הם הערכה בלבד ומבוססים על נתוני הסוכנים השונים.</li>
-                        <li>לכל סוכן יש מגבלות משקל שונות. למשל, CSSBUY מאפשר שליחה באמצעות EUB עד 3 ק"ג (3000 גרם) בלבד.</li>
-                        <li>שער ההמרה לשקל הוא משוער (שער נוכחי: ${dollarToShekelRate} ₪ לדולר).</li>
-                        <li>המחיר הסופי עשוי להשתנות בהתאם לממדי החבילה ומדיניות חברת המשלוחים.</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-};
 
-export default ShippingCosts;
+                {/* תצוגת אפשרויות המשלוח מ-API של CSSBUY */}
+                {selectedAgent === "cssbuy" && useCSBuyAPI && (
+                  <div className="mb-8">
+                    <div className="glass-card rounded-xl overflow-hidden bg-white">
+                      <div className="bg-primary/10 p-4 text-center">
+                        <h4 className="font-medium">אפשרויות משלוח מ-CSSBUY עבור {packageWeight} גרם</h4>
+                      </div>
+                      <div className="p-6">
+                        {isLoadingCSS ? (
+                          <div className="text-center py-4">
+                            <div className="loading-spinner mb-2"></div>
+                            <p>טוען אפשרויות משלוח...</p>
+                          </div>
+                        ) : cssApiError ? (
+                          <div className="text-center py-4 text-red-500">
+                            <AlertCircle size={24} className="mx-auto mb-2" />
+                            <p>{cssApiError}</p>
+                          </div>
+                        ) : cssbuySippingOptions.length === 0 ? (
+                          <div className="text-center py-4 text-muted-foreground">
+                            <p>לא נמצאו אפשרויות משלוח זמינות</p>
+                            <button 
+                              onClick={fetchCSSBUYRates}
+                              className="mt-2 px-4 py-2 bg-secondary rounded-md text-sm"
+                            >
+                              נסה שוב
+                            </button>
+                          </div>
+                        ) : (
+                          <div className
