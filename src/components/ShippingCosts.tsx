@@ -23,7 +23,6 @@ interface ShippingMethodOption {
   maxWeight: number;
   minDeliveryDays: number;
   maxDeliveryDays: number;
-  // New property for dynamic calculation
   dynamicCalculation?: {
     baseFee: number;
     baseWeight: number;
@@ -47,18 +46,18 @@ const agentShippingOptions: AgentShippingOptions[] = [
       {
         id: "eub",
         name: "EUB",
-        prices: [], // Empty array since we're using dynamic calculation
+        prices: [],
         description: "שירות חסכוני ומהימן, מתאים למשלוחים קטנים עד 3 ק״ג",
         deliveryTime: "15-30 ימים",
         maxWeight: 3,
         minDeliveryDays: 15,
         maxDeliveryDays: 30,
         dynamicCalculation: {
-          baseFee: 4.85, // Base fee for first 100g
-          baseWeight: 100, // First 100g
-          additionalFeePerUnit: 1.38, // Fee per additional 100g
-          unitWeight: 100, // Unit in grams
-          maxWeightGrams: 3000 // Max weight in grams
+          baseFee: 4.85,
+          baseWeight: 100,
+          additionalFeePerUnit: 1.38,
+          unitWeight: 100,
+          maxWeightGrams: 3000
         }
       }
     ]
@@ -93,7 +92,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "eub",
         name: "EUB",
         prices: [
-          { weight: 1, price: 17.47 }, // הוספתי מחיר ל-1 קילו
+          { weight: 1, price: 17.47 },
           { weight: 2, price: 30.31 },
           { weight: 3, price: 43.15 },
           { weight: 4, price: 55.99 },
@@ -109,7 +108,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "israel-line-f",
         name: "Israel Line-F",
         prices: [
-          { weight: 1, price: 18.9 }, // הוספתי מחיר ל-1 קילו
+          { weight: 1, price: 18.9 },
           { weight: 2, price: 32.47 },
           { weight: 3, price: 46.04 },
           { weight: 4, price: 59.61 },
@@ -131,7 +130,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "china-post",
         name: "China Post Registered Packet",
         prices: [
-          { weight: 1, price: 25.19 }, // הוספתי מחיר ל-1 קילו
+          { weight: 1, price: 25.19 },
           { weight: 2, price: 42.5 }
         ],
         description: "שירות דואר רשום סטנדרטי, מתאים למשלוחים עד 2 ק״ג",
@@ -144,7 +143,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "aramex",
         name: "Aramex",
         prices: [
-          { weight: 1, price: 25.36 }, // הוספתי מחיר ל-1 קילו
+          { weight: 1, price: 25.36 },
           { weight: 2, price: 37.68 },
           { weight: 3, price: 49.99 },
           { weight: 4, price: 62.12 },
@@ -160,7 +159,7 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "pb-express",
         name: "P&B Express (Tax Free)",
         prices: [
-          { weight: 1, price: 26.34 }, // הוספתי מחיר ל-1 קילו
+          { weight: 1, price: 26.34 },
           { weight: 2, price: 42.56 },
           { weight: 3, price: 58.79 },
           { weight: 4, price: 75.01 },
@@ -187,7 +186,7 @@ const shippingRates: ShippingRate[] = [
   { weightRange: "15 - 20 ק״ג", emsPrice: "1200-1500 ₪", fedexPrice: "1600-2000 ₪", dhlPrice: "1900-2400 ₪" },
 ];
 
-const dollarToShekelRate = 3.7; // המרה משוערת
+const dollarToShekelRate = 3.7;
 
 const ShippingCosts = () => {
   const [searchWeight, setSearchWeight] = useState("");
@@ -199,46 +198,34 @@ const ShippingCosts = () => {
       )
     : shippingRates;
 
-  // מחשבון החדש
   const [selectedAgent, setSelectedAgent] = useState<string>(agentShippingOptions[0].id);
   const [selectedMethod, setSelectedMethod] = useState<string>(agentShippingOptions[0].methods[0].id);
-  const [packageWeightGrams, setPackageWeightGrams] = useState<number>(1000); // Default to 1000g instead of 1kg
-  
-  // Convert grams to kg for calculations
-  const packageWeight = packageWeightGrams / 1000;
+  const [packageWeightGrams, setPackageWeightGrams] = useState<number | ''>('');
 
-  // מצא את הסוכן הנבחר
+  const packageWeight = packageWeightGrams === '' ? 0 : packageWeightGrams / 1000;
+
   const currentAgent = agentShippingOptions.find(agent => agent.id === selectedAgent);
-  
-  // מצא את שיטת המשלוח הנבחרת
   const currentMethod = currentAgent?.methods.find(method => method.id === selectedMethod);
 
-  // פונקציה לחישוב דינמי של עלויות CSSBUY
   const calculateDynamicCost = (weightKg: number, dynamicConfig: ShippingMethodOption['dynamicCalculation']) => {
     if (!dynamicConfig) return 0;
     
     const weightGrams = weightKg * 1000;
     
     if (weightGrams <= 0) return 0;
-    if (weightGrams > dynamicConfig.maxWeightGrams) return -1; // חריגת משקל
+    if (weightGrams > dynamicConfig.maxWeightGrams) return -1;
     
-    // חישוב מחיר לפי נוסחה דינמית
     const { baseFee, baseWeight, additionalFeePerUnit, unitWeight } = dynamicConfig;
     
-    // מספר יחידות מלאות מעבר למשקל הבסיס
     const fullUnits = Math.floor((weightGrams - baseWeight) / unitWeight);
-    
-    // שארית גרמים מעבר ליחידות המלאות
     const remainingGrams = (weightGrams - baseWeight) % unitWeight;
     
     let cost = baseFee;
     
-    // הוסף עלות עבור יחידות מלאות
     if (fullUnits > 0) {
       cost += fullUnits * additionalFeePerUnit;
     }
     
-    // הוסף עלות יחסית עבור שארית המשקל
     if (remainingGrams > 0) {
       cost += (remainingGrams / unitWeight) * additionalFeePerUnit;
     }
@@ -246,22 +233,17 @@ const ShippingCosts = () => {
     return cost;
   };
 
-  // חשב את עלות המשלוח לפי הטבלת מחירים או החישוב הדינמי
   const calculateShippingCost = () => {
     if (!currentMethod) return 0;
     
-    // בדיקה אם המשקל גדול מהמקסימום המותר לשיטה זו
     if (packageWeight > currentMethod.maxWeight) {
-      return -1; // קוד שגיאה למשקל חורג
+      return -1;
     }
     
-    // במידה ויש חישוב דינמי, השתמש בו
     if (currentMethod.dynamicCalculation) {
       return calculateDynamicCost(packageWeight, currentMethod.dynamicCalculation);
     }
     
-    // אחרת, חשב לפי טבלת המחירים הקבועה
-    // מצא את נקודת המחיר הקרובה ביותר למשקל המבוקש (עיגול כלפי מעלה)
     const pricePoint = [...currentMethod.prices]
       .sort((a, b) => a.weight - b.weight)
       .find(point => point.weight >= packageWeight);
@@ -269,27 +251,22 @@ const ShippingCosts = () => {
     if (pricePoint) {
       return pricePoint.price;
     } else if (currentMethod.prices.length > 0) {
-      // אם אין מחיר מדויק, קח את המחיר לפי המשקל הגדול ביותר
       const highestPricePoint = currentMethod.prices.reduce(
         (max, point) => (point.weight > max.weight ? point : max),
         currentMethod.prices[0]
       );
       
-      // חישוב פשוט: יחס ליניארי
       return (packageWeight / highestPricePoint.weight) * highestPricePoint.price;
     }
     
     return 0;
   };
 
-  // המרת דולר לשקל
   const shippingCostUSD = calculateShippingCost();
   const shippingCostILS = shippingCostUSD > 0 ? shippingCostUSD * dollarToShekelRate : -1;
 
-  // בדיקה אם המשקל חורג מהמקסימום המותר
   const isWeightExceeded = shippingCostUSD === -1;
 
-  // טיפול בשינוי הסוכן - איפוס שיטת המשלוח לברירת המחדל של הסוכן החדש
   const handleAgentChange = (agentId: string) => {
     setSelectedAgent(agentId);
     const newAgent = agentShippingOptions.find(agent => agent.id === agentId);
@@ -298,7 +275,6 @@ const ShippingCosts = () => {
     }
   };
 
-  // מצא את כל שיטות המשלוח האפשריות עבור המשקל הנוכחי
   const availableShippingOptions = useMemo(() => {
     const options: Array<{
       agentId: string;
@@ -313,16 +289,13 @@ const ShippingCosts = () => {
     agentShippingOptions.forEach(agent => {
       agent.methods.forEach(method => {
         if (packageWeight <= method.maxWeight) {
-          // חישוב מחיר לשיטה זו - בדיקה אם יש חישוב דינמי
           let price = 0;
           
           if (method.dynamicCalculation) {
             price = calculateDynamicCost(packageWeight, method.dynamicCalculation);
             
-            // אם המשקל חורג, דלג על האפשרות הזו
             if (price === -1) return;
           } else {
-            // חישוב לפי טבלת מחירים רגילה
             const pricePoint = [...method.prices]
               .sort((a, b) => a.weight - b.weight)
               .find(point => point.weight >= packageWeight);
@@ -354,7 +327,6 @@ const ShippingCosts = () => {
     return options;
   }, [packageWeight]);
 
-  // מצא את האפשרות הזולה ביותר והמהירה ביותר
   const cheapestOption = useMemo(() => {
     return availableShippingOptions.length > 0
       ? availableShippingOptions.reduce((min, option) => 
@@ -369,7 +341,6 @@ const ShippingCosts = () => {
       : null;
   }, [availableShippingOptions]);
 
-  // ממיר משקל מקילוגרמים לגרמים להצגה
   const weightInGrams = Math.round(packageWeight * 1000);
 
   return (
@@ -386,7 +357,6 @@ const ShippingCosts = () => {
             </p>
           </div>
 
-          {/* Tab buttons */}
           <div className="flex justify-center mb-6">
             <div className="bg-secondary rounded-lg p-1 flex">
               <button
@@ -479,7 +449,6 @@ const ShippingCosts = () => {
                   <h3 className="text-xl font-medium">מחשבון עלויות משלוח</h3>
                 </div>
                 
-                {/* המלצות עבור המשלוח הזול והמהיר */}
                 {availableShippingOptions.length > 0 && (
                   <div className="mb-8 bg-secondary/20 rounded-xl p-5">
                     <h4 className="text-lg font-medium text-center mb-4">המלצות משלוח</h4>
@@ -522,7 +491,6 @@ const ShippingCosts = () => {
                 )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  {/* בחירת סוכן */}
                   <div>
                     <label htmlFor="agent" className="block mb-2 font-medium">
                       בחר סוכן
@@ -541,7 +509,6 @@ const ShippingCosts = () => {
                     </select>
                   </div>
 
-                  {/* בחירת שיטת משלוח */}
                   <div>
                     <label htmlFor="shipping-method" className="block mb-2 font-medium">
                       שיטת משלוח
@@ -561,26 +528,6 @@ const ShippingCosts = () => {
                   </div>
                 </div>
 
-                {/* פרטי שיטת המשלוח */}
-                {currentMethod && (
-                  <div className="bg-secondary/30 rounded-lg p-4 mb-6">
-                    <h4 className="font-medium mb-2">{currentMethod.name}</h4>
-                    <p className="text-muted-foreground text-sm mb-2">{currentMethod.description}</p>
-                    <div className="flex items-center text-sm">
-                      <span>זמן משלוח משוער: {currentMethod.deliveryTime}</span>
-                    </div>
-                    <div className="text-sm mt-2 text-muted-foreground">
-                      מקסימום משקל לשליחה: <span className="font-medium">{currentMethod.maxWeight} ק"ג</span>
-                    </div>
-                    {currentMethod.dynamicCalculation && (
-                      <div className="mt-2 text-sm text-primary">
-                        חישוב מחיר: דינמי לפי משקל מדויק
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {/* הזנת משקל */}
                 <div className="mb-8">
                   <label htmlFor="weight" className="block mb-2 font-medium">
                     משקל החבילה (בגרם)
@@ -592,15 +539,15 @@ const ShippingCosts = () => {
                     max="30000"
                     step="1"
                     value={packageWeightGrams}
-                    onChange={(e) => setPackageWeightGrams(Number(e.target.value))}
+                    onChange={(e) => setPackageWeightGrams(e.target.value === '' ? '' : Number(e.target.value))}
                     className="glass-card w-full py-3 px-4 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="הזן משקל בגרמים"
                   />
                   <div className="mt-2 text-sm text-muted-foreground">
                     משקל בקילוגרמים: <span className="font-medium">{packageWeight.toFixed(3)} ק"ג</span>
                   </div>
                 </div>
                 
-                {/* תוצאת החישוב */}
                 <div className="glass-card rounded-xl overflow-hidden bg-white">
                   <div className="bg-primary/10 p-4 text-center">
                     <h4 className="font-medium">עלות משלוח משוערת</h4>
