@@ -4,37 +4,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu as MenuIcon, X, Search, Mic, LoaderCircle } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import SearchResults from "./SearchResults";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from '../integrations/supabase/client';
 
 // Supported marketplaces
 const SUPPORTED_MARKETPLACES = ['taobao', 'weidian', '1688', 'tmall'];
-
-// Mock data for search results
-const mockResults = [
-  { 
-    id: '1', 
-    title: 'Nike Tech Fleece Hoodie', 
-    image: '/placeholder.svg', 
-    price: 250, 
-    source: 'Weidian' 
-  },
-  { 
-    id: '2', 
-    title: 'Adidas Sweatpants', 
-    image: '/placeholder.svg', 
-    price: 180, 
-    source: 'Taobao' 
-  },
-  { 
-    id: '3', 
-    title: 'Jordan 4 Retro', 
-    image: '/placeholder.svg', 
-    price: 380, 
-    source: '1688' 
-  },
-];
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,7 +17,7 @@ const Header = () => {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showResults, setShowResults] = useState(false);
-  const [searchResults, setSearchResults] = useState(mockResults);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -89,25 +64,124 @@ const Header = () => {
     }
   };
 
+  const extractItemIdFromUrl = (url: string): string | null => {
+    try {
+      const urlObj = new URL(url);
+      
+      // Extract ID based on marketplace
+      if (urlObj.hostname.includes('taobao')) {
+        // For Taobao, usually the ID is in the path or as 'id' parameter
+        const idParam = urlObj.searchParams.get('id');
+        if (idParam) return idParam;
+        
+        // Try to extract from path
+        const pathMatch = urlObj.pathname.match(/\/item\/(\d+)/);
+        if (pathMatch) return pathMatch[1];
+      } 
+      else if (urlObj.hostname.includes('weidian')) {
+        // For Weidian, usually as 'itemID' parameter
+        const idParam = urlObj.searchParams.get('itemID') || urlObj.searchParams.get('itemId');
+        if (idParam) return idParam;
+        
+        // Try to extract from path
+        const pathMatch = urlObj.pathname.match(/\/item\/(\d+)/);
+        if (pathMatch) return pathMatch[1];
+      }
+      else if (urlObj.hostname.includes('1688')) {
+        // For 1688, usually as 'offer' parameter or in path
+        const idParam = urlObj.searchParams.get('offer');
+        if (idParam) return idParam;
+        
+        // Try to extract from path
+        const pathMatch = urlObj.pathname.match(/\/offer\/(\d+)/);
+        if (pathMatch) return pathMatch[1];
+      }
+      else if (urlObj.hostname.includes('tmall')) {
+        // For Tmall, usually as 'id' parameter
+        const idParam = urlObj.searchParams.get('id');
+        if (idParam) return idParam;
+      }
+      
+      // If no specific pattern matched, return the full URL as fallback
+      return url;
+    } catch (e) {
+      console.error('Error extracting ID from URL:', e);
+      return null;
+    }
+  };
+
+  const searchQCPosts = async (url: string) => {
+    setIsLoading(true);
+    
+    try {
+      const itemId = extractItemIdFromUrl(url);
+      
+      if (!itemId) {
+        throw new Error('Could not extract item ID from URL');
+      }
+      
+      console.log('Searching for QC posts with product link containing:', itemId);
+      
+      // Query supabase for QC posts with matching product link
+      const { data, error } = await supabase
+        .from('qc_posts')
+        .select('*')
+        .or(`product_link.ilike.%${itemId}%`);
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log('Search results:', data);
+      
+      if (data && data.length > 0) {
+        // Format the results for the SearchResults component
+        const formattedResults = data.map(post => ({
+          id: post.id,
+          title: post.title,
+          image: post.images[0] || '/placeholder.svg', // Use the first image
+          price: post.price || 0,
+          weight: post.weight || 0,
+          source: getMarketplaceName(post.product_link || ''),
+        }));
+        
+        setSearchResults(formattedResults);
+        setShowResults(true);
+      } else {
+        // No results found
+        setSearchResults([]);
+        setShowResults(true);
+        toast.info("לא נמצאו בדיקות QC למוצר זה");
+      }
+    } catch (error) {
+      console.error('Error searching QC posts:', error);
+      toast.error("אירעה שגיאה בחיפוש");
+      setSearchResults([]);
+      setShowResults(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getMarketplaceName = (url: string): string => {
+    if (!url) return 'אתר לא ידוע';
+    if (url.includes('taobao.com')) return 'Taobao';
+    if (url.includes('weidian.com')) return 'Weidian';
+    if (url.includes('1688.com')) return '1688';
+    if (url.includes('tmall.com')) return 'TMall';
+    return 'אתר לא ידוע';
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!inputValue.trim()) return;
     
     if (isValidMarketplaceUrl(inputValue)) {
-      // Simulate search with loading state
-      setIsLoading(true);
-      
-      // Mock API call delay
-      setTimeout(() => {
-        setIsLoading(false);
-        setShowResults(true);
-        
-        // Here we would normally fetch search results from the database
-        // For now we'll just use mock data
-      }, 1000);
+      // Search for QC posts with this URL
+      searchQCPosts(inputValue);
     } else {
-      toast.error("Please enter a valid URL from Taobao, Weidian, 1688 or TMall");
+      toast.error("נא להזין קישור תקין מ-Taobao, Weidian, 1688 או TMall");
     }
   };
   
@@ -268,12 +342,18 @@ const Header = () => {
         </div>
       )}
       
-      {/* Search Results Modal */}
-      <SearchResults 
-        isOpen={showResults} 
-        results={searchResults} 
-        onClose={closeResults} 
-      />
+      {/* Search Results Section (now rendered directly in the page flow) */}
+      <AnimatePresence>
+        {showResults && (
+          <div className="container mt-16 pt-4">
+            <SearchResults 
+              isOpen={showResults} 
+              results={searchResults} 
+              onClose={closeResults} 
+            />
+          </div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
