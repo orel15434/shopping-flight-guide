@@ -1,11 +1,14 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Search, Mic, LoaderCircle } from 'lucide-react';
+import { Input } from "@/components/ui/input";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -25,6 +28,17 @@ const Header = () => {
     setIsMenuOpen(false);
   }, [location]);
 
+  useEffect(() => {
+    if (inputValue) {
+      setIsLoading(true);
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    setIsLoading(false);
+  }, [inputValue]);
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
@@ -42,6 +56,39 @@ const Header = () => {
             PoPobuyIL
           </span>
         </Link>
+        
+        {/* Search Bar */}
+        <div className="hidden md:block flex-grow mx-8 max-w-xl">
+          <div className="relative">
+            <Input
+              className="peer pe-9 ps-9 w-full"
+              placeholder="חיפוש..."
+              type="search"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+            />
+            <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-muted-foreground/80 peer-disabled:opacity-50">
+              {isLoading ? (
+                <LoaderCircle
+                  className="animate-spin"
+                  size={16}
+                  strokeWidth={2}
+                  role="status"
+                  aria-label="Loading..."
+                />
+              ) : (
+                <Search size={16} strokeWidth={2} aria-hidden="true" />
+              )}
+            </div>
+            <button
+              className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 outline-offset-2 transition-colors hover:text-foreground focus:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Press to speak"
+              type="submit"
+            >
+              <Mic size={16} strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8 space-x-reverse">
@@ -85,6 +132,39 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-background absolute top-full left-0 right-0 border-b border-border animate-fade-in">
           <div className="container py-4 flex flex-col space-y-4">
+            {/* Mobile Search Bar */}
+            <div className="mb-2">
+              <div className="relative">
+                <Input
+                  className="peer pe-9 ps-9 w-full"
+                  placeholder="חיפוש..."
+                  type="search"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                />
+                <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-muted-foreground/80 peer-disabled:opacity-50">
+                  {isLoading ? (
+                    <LoaderCircle
+                      className="animate-spin"
+                      size={16}
+                      strokeWidth={2}
+                      role="status"
+                      aria-label="Loading..."
+                    />
+                  ) : (
+                    <Search size={16} strokeWidth={2} aria-hidden="true" />
+                  )}
+                </div>
+                <button
+                  className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 outline-offset-2 transition-colors hover:text-foreground focus:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Press to speak"
+                  type="submit"
+                >
+                  <Mic size={16} strokeWidth={2} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            
             <Link 
               to="/" 
               className="text-foreground hover:text-primary transition-colors py-2 font-medium"
