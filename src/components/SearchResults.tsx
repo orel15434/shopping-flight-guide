@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { DollarSign, Scale, ExternalLink, ShoppingBag } from 'lucide-react';
+import { DollarSign, Scale, ExternalLink, ShoppingBag, PackageCheck, Package } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface SearchResultItem {
@@ -39,6 +39,20 @@ const calculateShipping = (weight: number): number => {
   if (weight <= 1000) return 25; // Medium items
   if (weight <= 2000) return 40; // Heavier items
   return 60; // Very heavy items
+};
+
+// Helper to get recommended shipping method based on weight
+const getRecommendedShippingMethod = (weight: number): string => {
+  if (weight <= 500) return "EUB";
+  if (weight <= 1000) return "Aramex";
+  if (weight <= 2000) return "EMS";
+  return "DHL";
+};
+
+// Helper to convert USD to ILS (simplified)
+const usdToIls = (usd: number): number => {
+  const exchangeRate = 3.7; // Example exchange rate (should be updated regularly)
+  return usd * exchangeRate;
 };
 
 const SearchResults = ({ isOpen, results, onClose }: SearchResultsProps) => {
@@ -114,7 +128,7 @@ const SearchResults = ({ isOpen, results, onClose }: SearchResultsProps) => {
                       <DollarSign size={18} className="mr-2 text-green-600" />
                       <span className="font-medium">מחיר המוצר:</span>
                     </div>
-                    <span className="font-bold text-green-600">₪{results[0].price.toFixed(2)}</span>
+                    <span className="font-bold text-green-600">${results[0].price.toFixed(2)}</span>
                   </div>
                   
                   {results[0].weight && (
@@ -130,19 +144,36 @@ const SearchResults = ({ isOpen, results, onClose }: SearchResultsProps) => {
                   {results[0].weight && (
                     <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
                       <div className="flex items-center">
-                        <ShoppingBag size={18} className="mr-2 text-purple-600" />
+                        <PackageCheck size={18} className="mr-2 text-purple-600" />
+                        <span className="font-medium">שיטת משלוח מומלצת:</span>
+                      </div>
+                      <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded text-xs">
+                        {getRecommendedShippingMethod(results[0].weight)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {results[0].weight && (
+                    <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center">
+                        <Package size={18} className="mr-2 text-indigo-600" />
                         <span className="font-medium">עלות משלוח מוערכת:</span>
                       </div>
-                      <span>₪{calculateShipping(results[0].weight).toFixed(2)}</span>
+                      <span>${calculateShipping(results[0].weight).toFixed(2)}</span>
                     </div>
                   )}
                   
                   {results[0].weight && (
                     <div className="flex items-center justify-between py-3 bg-gray-50 dark:bg-gray-800/50 px-4 rounded-lg mt-4">
                       <span className="font-bold">סה"כ עלות משוערת:</span>
-                      <span className="font-bold text-lg text-primary">
-                        ₪{(results[0].price + calculateShipping(results[0].weight)).toFixed(2)}
-                      </span>
+                      <div className="text-end">
+                        <div className="font-bold text-lg text-primary">
+                          ${(results[0].price + calculateShipping(results[0].weight)).toFixed(2)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          ₪{(usdToIls(results[0].price + calculateShipping(results[0].weight))).toFixed(2)}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
