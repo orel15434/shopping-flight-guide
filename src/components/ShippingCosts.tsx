@@ -4,9 +4,11 @@ import { Input } from './ui/input';
 
 interface ShippingRate {
   weightRange: string;
-  emsPrice: string;
-  fedexPrice: string;
-  dhlPrice: string;
+  eubPrice: string;
+  israelLineFPrice: string;
+  chinaPostPrice: string;
+  aramexPrice: string;
+  pbPrice: string;
 }
 
 interface PricePoint {
@@ -176,14 +178,46 @@ const agentShippingOptions: AgentShippingOptions[] = [
 ];
 
 const shippingRates: ShippingRate[] = [
-  { weightRange: "0.5 - 1 ק״ג", emsPrice: "120-180 ₪", fedexPrice: "240-280 ₪", dhlPrice: "260-320 ₪" },
-  { weightRange: "1 - 2 ק״ג", emsPrice: "180-240 ₪", fedexPrice: "280-340 ₪", dhlPrice: "320-400 ₪" },
-  { weightRange: "2 - 3 ק״ג", emsPrice: "240-300 ₪", fedexPrice: "340-420 ₪", dhlPrice: "400-500 ₪" },
-  { weightRange: "3 - 4 ק״ג", emsPrice: "300-380 ₪", fedexPrice: "420-500 ₪", dhlPrice: "500-600 ₪" },
-  { weightRange: "4 - 5 ק״ג", emsPrice: "380-460 ₪", fedexPrice: "500-580 ₪", dhlPrice: "600-700 ₪" },
-  { weightRange: "5 - 10 ק״ג", emsPrice: "460-800 ₪", fedexPrice: "580-1100 ₪", dhlPrice: "700-1300 ₪" },
-  { weightRange: "10 - 15 ק״ג", emsPrice: "800-1200 ₪", fedexPrice: "1100-1600 ₪", dhlPrice: "1300-1900 ₪" },
-  { weightRange: "15 - 20 ק״ג", emsPrice: "1200-1500 ₪", fedexPrice: "1600-2000 ₪", dhlPrice: "1900-2400 ₪" },
+  { 
+    weightRange: "0.5 - 1 ק״ג", 
+    eubPrice: "64-75 ₪",
+    israelLineFPrice: "70-80 ₪",
+    chinaPostPrice: "93-95 ₪",
+    aramexPrice: "94-96 ₪",
+    pbPrice: "97-99 ₪"
+  },
+  { 
+    weightRange: "1 - 2 ק״ג", 
+    eubPrice: "112-115 ₪",
+    israelLineFPrice: "120-122 ₪",
+    chinaPostPrice: "157-160 ₪",
+    aramexPrice: "139-142 ₪",
+    pbPrice: "157-160 ₪"
+  },
+  { 
+    weightRange: "2 - 3 ק״ג", 
+    eubPrice: "159-165 ₪",
+    israelLineFPrice: "170-172 ₪",
+    chinaPostPrice: "לא זמין",
+    aramexPrice: "185-188 ₪",
+    pbPrice: "217-220 ₪"
+  },
+  { 
+    weightRange: "3 - 4 ק״ג", 
+    eubPrice: "215-218 ₪",
+    israelLineFPrice: "220-223 ₪",
+    chinaPostPrice: "לא זמין",
+    aramexPrice: "230-233 ₪",
+    pbPrice: "277-280 ₪"
+  },
+  { 
+    weightRange: "4 - 5 ק״ג", 
+    eubPrice: "265-268 ₪",
+    israelLineFPrice: "270-273 ₪",
+    chinaPostPrice: "לא זמין",
+    aramexPrice: "275-278 ₪",
+    pbPrice: "337-340 ₪"
+  }
 ];
 
 const dollarToShekelRate = 3.7;
@@ -403,9 +437,11 @@ const ShippingCosts = () => {
                     <thead>
                       <tr className="bg-secondary/50">
                         <th className="px-4 py-3 font-medium">טווח משקל</th>
-                        <th className="px-4 py-3 font-medium">EMS</th>
-                        <th className="px-4 py-3 font-medium">FedEx</th>
-                        <th className="px-4 py-3 font-medium">DHL</th>
+                        <th className="px-4 py-3 font-medium">EUB</th>
+                        <th className="px-4 py-3 font-medium">Israel Line-F</th>
+                        <th className="px-4 py-3 font-medium">China Post</th>
+                        <th className="px-4 py-3 font-medium">Aramex</th>
+                        <th className="px-4 py-3 font-medium">P&B Express</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -418,14 +454,16 @@ const ShippingCosts = () => {
                             }`}
                           >
                             <td className="px-4 py-3 font-medium">{rate.weightRange}</td>
-                            <td className="px-4 py-3">{rate.emsPrice}</td>
-                            <td className="px-4 py-3">{rate.fedexPrice}</td>
-                            <td className="px-4 py-3">{rate.dhlPrice}</td>
+                            <td className="px-4 py-3">{rate.eubPrice}</td>
+                            <td className="px-4 py-3">{rate.israelLineFPrice}</td>
+                            <td className="px-4 py-3">{rate.chinaPostPrice}</td>
+                            <td className="px-4 py-3">{rate.aramexPrice}</td>
+                            <td className="px-4 py-3">{rate.pbPrice}</td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                          <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                             לא נמצאו תוצאות מתאימות
                           </td>
                         </tr>
