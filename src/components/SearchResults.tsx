@@ -34,24 +34,26 @@ const transition = {
 const calculateShipping = (weight: number): number => {
   if (!weight) return 0;
   
-  // Basic shipping calculation (adjust according to your actual rates)
-  if (weight <= 500) return 15; // Light items
-  if (weight <= 1000) return 25; // Medium items
-  if (weight <= 2000) return 40; // Heavier items
-  return 60; // Very heavy items
+  // Using the exact values from the calculator for EUB shipping
+  if (weight <= 500) return 17.22; // Up to 500g
+  if (weight <= 1000) return 30.94; // Up to 1kg
+  if (weight <= 1500) return 37.71; // Up to 1.5kg
+  if (weight <= 2000) return 44.48; // Up to 2kg
+  if (weight <= 2500) return 51.25; // Up to 2.5kg
+  if (weight <= 3000) return 58.11; // Up to 3kg
+  return -1; // Weight exceeds maximum
 };
 
 // Helper to get recommended shipping method based on weight
 const getRecommendedShippingMethod = (weight: number): string => {
-  if (weight <= 500) return "EUB";
-  if (weight <= 1000) return "Aramex";
-  if (weight <= 2000) return "EMS";
-  return "DHL";
+  if (weight <= 3000) return "EUB"; // EUB is recommended up to 3kg
+  if (weight <= 5000) return "Aramex"; // Aramex for heavier items
+  return "DHL"; // DHL for very heavy items
 };
 
 // Helper to convert USD to ILS (simplified)
 const usdToIls = (usd: number): number => {
-  const exchangeRate = 3.7; // Example exchange rate (should be updated regularly)
+  const exchangeRate = 3.7; // Example exchange rate
   return usd * exchangeRate;
 };
 
