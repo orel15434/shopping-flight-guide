@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Package2, Search, Calculator, ThumbsUp, Zap } from 'lucide-react';
 import { Input } from './ui/input';
@@ -203,7 +202,10 @@ const ShippingCosts = () => {
   // מחשבון החדש
   const [selectedAgent, setSelectedAgent] = useState<string>(agentShippingOptions[0].id);
   const [selectedMethod, setSelectedMethod] = useState<string>(agentShippingOptions[0].methods[0].id);
-  const [packageWeight, setPackageWeight] = useState<number>(1); // כברירת מחדל מוגדר כעת ל-1 קילו
+  const [packageWeightGrams, setPackageWeightGrams] = useState<number>(1000); // Default to 1000g instead of 1kg
+  
+  // Convert grams to kg for calculations
+  const packageWeight = packageWeightGrams / 1000;
 
   // מצא את הסוכן הנבחר
   const currentAgent = agentShippingOptions.find(agent => agent.id === selectedAgent);
@@ -581,23 +583,21 @@ const ShippingCosts = () => {
                 {/* הזנת משקל */}
                 <div className="mb-8">
                   <label htmlFor="weight" className="block mb-2 font-medium">
-                    משקל החבילה (בק״ג)
+                    משקל החבילה (בגרם)
                   </label>
                   <input
                     type="number"
                     id="weight"
-                    min="0.1"
-                    max="30"
-                    step="0.1"
-                    value={packageWeight}
-                    onChange={(e) => setPackageWeight(Number(e.target.value))}
+                    min="100"
+                    max="30000"
+                    step="1"
+                    value={packageWeightGrams}
+                    onChange={(e) => setPackageWeightGrams(Number(e.target.value))}
                     className="glass-card w-full py-3 px-4 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
-                  {currentMethod?.dynamicCalculation && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      משקל בגרמים: <span className="font-medium">{weightInGrams} גרם</span>
-                    </div>
-                  )}
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    משקל בקילוגרמים: <span className="font-medium">{packageWeight.toFixed(3)} ק"ג</span>
+                  </div>
                 </div>
                 
                 {/* תוצאת החישוב */}
