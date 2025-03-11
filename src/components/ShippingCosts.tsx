@@ -305,7 +305,7 @@ const ShippingCosts = () => {
             } else if (method.prices.length > 0) {
               const highestPricePoint = method.prices.reduce(
                 (max, point) => (point.weight > max.weight ? point : max),
-                method.prices[0]
+                currentMethod.prices[0]
               );
               price = (packageWeight / highestPricePoint.weight) * highestPricePoint.price;
             }
@@ -576,16 +576,6 @@ const ShippingCosts = () => {
                   </div>
                 </div>
                 
-                {currentMethod?.dynamicCalculation && (
-                  <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm">
-                    <div className="font-medium mb-1 text-blue-700">אודות מחשבון דינמי CSSBUY EUB:</div>
-                    <p className="text-blue-600">
-                      מחיר המשלוח מחושב באופן דינמי לפי המשקל המדויק בגרמים:
-                      {currentMethod.dynamicCalculation.baseFee}$ עבור {currentMethod.dynamicCalculation.baseWeight} הגרמים הראשונים,
-                      ו-{currentMethod.dynamicCalculation.additionalFeePerUnit}$ לכל {currentMethod.dynamicCalculation.unitWeight} גרם נוספים.
-                    </p>
-                  </div>
-                )}
                 
                 <div className="mt-6 bg-primary/5 rounded-lg p-4 text-sm text-muted-foreground">
                   <div className="flex items-start">
