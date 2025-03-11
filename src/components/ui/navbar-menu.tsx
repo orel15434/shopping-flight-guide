@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import Image from 'react-bootstrap/Image';
 
 export const MenuItem = ({
   setActive,
