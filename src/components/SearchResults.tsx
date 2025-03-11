@@ -34,13 +34,21 @@ const transition = {
 const calculateShipping = (weight: number): number => {
   if (!weight) return 0;
   
-  // Using the exact values from the calculator for EUB shipping
-  if (weight <= 500) return 17.22; // Up to 500g
-  if (weight <= 1000) return 30.94; // Up to 1kg
-  if (weight <= 1500) return 37.71; // Up to 1.5kg
-  if (weight <= 2000) return 44.48; // Up to 2kg
-  if (weight <= 2500) return 51.25; // Up to 2.5kg
-  if (weight <= 3000) return 58.11; // Up to 3kg
+  // Using the exact values from the pricing chart for EUB shipping
+  if (weight <= 100) return 8.00;
+  if (weight <= 200) return 8.50;
+  if (weight <= 300) return 9.00; 
+  if (weight <= 400) return 9.50;
+  if (weight <= 500) return 10.00;
+  if (weight <= 600) return 11.00; // 557g would fall here
+  if (weight <= 700) return 12.00;
+  if (weight <= 800) return 13.00;
+  if (weight <= 900) return 14.00;
+  if (weight <= 1000) return 15.00;
+  if (weight <= 1500) return 19.50;
+  if (weight <= 2000) return 24.00;
+  if (weight <= 2500) return 28.50;
+  if (weight <= 3000) return 33.00;
   return -1; // Weight exceeds maximum
 };
 
