@@ -94,11 +94,11 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "eub",
         name: "EUB",
         prices: [
-          { weight: 1, price: 17.47 },
-          { weight: 2, price: 30.31 },
-          { weight: 3, price: 43.15 },
-          { weight: 4, price: 55.99 },
-          { weight: 5, price: 68.83 }
+          { weight: 1, price: 19.85 },
+          { weight: 2, price: 33.58 },
+          { weight: 3, price: 47.31 },
+          { weight: 4, price: 61.04 },
+          { weight: 5, price: 74.77 }
         ],
         description: "שירות חסכוני ומהימן, מתאים למשלוחים עד 5 ק״ג",
         deliveryTime: "15-20 ימים",
