@@ -33,7 +33,7 @@ const transition = {
 const calculateShipping = (weight: number): number => {
   if (!weight) return 0;
   
-  // Complete price chart for KAKOBUY EUB shipping up to 3kg
+  // Complete price chart for KAKOBUY EUB shipping
   if (weight <= 100) return 7.33;
   if (weight <= 150) return 7.79;
   if (weight <= 200) return 8.26;
@@ -449,4 +449,47 @@ const calculateShipping = (weight: number): number => {
   if (weight <= 904) return 16.42;
   if (weight <= 905) return 16.44;
   if (weight <= 906) return 16.45;
-  if (weight <= 907
+  if (weight <= 907) return 16.46;
+  
+  return 16.46; // Default for weights over 907g
+};
+
+const SearchResults: React.FC<SearchResultsProps> = ({ isOpen, results, onClose }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={transition}
+    >
+      <Card>
+        <CardHeader>
+          <CardTitle>Search Results</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {results.map((result) => (
+            <div key={result.id}>
+              <div className="flex items-center">
+                <img src={result.image} alt={result.title} className="w-10 h-10 rounded-lg mr-4" />
+                <div>
+                  <h3 className="text-lg font-semibold">{result.title}</h3>
+                  <p className="text-gray-500">Price: ${result.price.toFixed(2)}</p>
+                  {result.weight && (
+                    <p className="text-gray-500">Weight: {result.weight}g</p>
+                  )}
+                </div>
+              </div>
+              <CardFooter>
+                <Button variant="outline" onClick={() => navigate(result.source)}>
+                  <ExternalLink className="mr-2" />
+                  View on Source
+                </Button>
+              </CardFooter>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+};
+
+export default SearchResults;
