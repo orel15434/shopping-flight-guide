@@ -455,6 +455,8 @@ const calculateShipping = (weight: number): number => {
 };
 
 const SearchResults: React.FC<SearchResultsProps> = ({ isOpen, results, onClose }) => {
+  const navigate = useNavigate();
+  
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
