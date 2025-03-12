@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
@@ -33,25 +34,33 @@ const transition = {
 const calculateShipping = (weight: number): number => {
   if (!weight) return 0;
   
-  // Base prices for common weight ranges
+  // Complete price chart for KAKOBUY EUB shipping up to 3kg
   if (weight <= 500) return 11.17;
-  if (weight <= 501) return 11.18;
-  if (weight <= 502) return 11.20;
-  if (weight <= 503) return 11.21;
-  if (weight <= 504) return 11.22;
-  if (weight <= 505) return 11.23;
-  if (weight <= 506) return 11.25;
-  if (weight <= 507) return 11.26;
-  if (weight <= 508) return 11.27;
-  if (weight <= 509) return 11.29;
-  if (weight <= 510) return 11.30;
-  if (weight <= 511) return 11.31;
-  if (weight <= 512) return 11.33;
-  if (weight <= 513) return 11.34;
-  if (weight <= 514) return 11.35;
-  if (weight <= 515) return 11.37;
-  if (weight <= 516) return 11.38;
-  if (weight <= 517) return 11.39;
+  if (weight <= 600) return 12.10;
+  if (weight <= 700) return 13.02;
+  if (weight <= 800) return 13.95;
+  if (weight <= 900) return 14.87;
+  if (weight <= 1000) return 15.80;
+  if (weight <= 1100) return 16.73;
+  if (weight <= 1200) return 17.65;
+  if (weight <= 1300) return 18.58;
+  if (weight <= 1400) return 19.50;
+  if (weight <= 1500) return 20.43;
+  if (weight <= 1600) return 21.36;
+  if (weight <= 1700) return 22.28;
+  if (weight <= 1800) return 23.21;
+  if (weight <= 1900) return 24.14;
+  if (weight <= 2000) return 25.06;
+  if (weight <= 2100) return 25.99;
+  if (weight <= 2200) return 26.91;
+  if (weight <= 2300) return 27.84;
+  if (weight <= 2400) return 28.77;
+  if (weight <= 2500) return 29.69;
+  if (weight <= 2600) return 30.62;
+  if (weight <= 2700) return 31.55;
+  if (weight <= 2800) return 32.47;
+  if (weight <= 2900) return 33.40;
+  if (weight <= 3000) return 34.32;
   return -1; // Weight exceeds maximum or is not in our price chart
 };
 
