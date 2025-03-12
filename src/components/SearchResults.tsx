@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
@@ -30,26 +29,30 @@ const transition = {
   restSpeed: 0.001,
 };
 
-// Helper function to calculate shipping cost based on weight
+// Helper function to calculate shipping cost based on weight for KAKOBUY EUB
 const calculateShipping = (weight: number): number => {
   if (!weight) return 0;
   
-  // Using the exact values from the pricing chart for EUB shipping
-  if (weight <= 100) return 8.00;
-  if (weight <= 200) return 8.50;
-  if (weight <= 300) return 9.00; 
-  if (weight <= 400) return 9.50;
-  if (weight <= 500) return 10.00;
-  if (weight <= 600) return 11.00; // 557g would fall here
-  if (weight <= 700) return 12.00;
-  if (weight <= 800) return 13.00;
-  if (weight <= 900) return 14.00;
-  if (weight <= 1000) return 15.00;
-  if (weight <= 1500) return 19.50;
-  if (weight <= 2000) return 24.00;
-  if (weight <= 2500) return 28.50;
-  if (weight <= 3000) return 33.00;
-  return -1; // Weight exceeds maximum
+  // Base prices for common weight ranges
+  if (weight <= 500) return 11.17;
+  if (weight <= 501) return 11.18;
+  if (weight <= 502) return 11.20;
+  if (weight <= 503) return 11.21;
+  if (weight <= 504) return 11.22;
+  if (weight <= 505) return 11.23;
+  if (weight <= 506) return 11.25;
+  if (weight <= 507) return 11.26;
+  if (weight <= 508) return 11.27;
+  if (weight <= 509) return 11.29;
+  if (weight <= 510) return 11.30;
+  if (weight <= 511) return 11.31;
+  if (weight <= 512) return 11.33;
+  if (weight <= 513) return 11.34;
+  if (weight <= 514) return 11.35;
+  if (weight <= 515) return 11.37;
+  if (weight <= 516) return 11.38;
+  if (weight <= 517) return 11.39;
+  return -1; // Weight exceeds maximum or is not in our price chart
 };
 
 // Helper to get recommended shipping method based on weight
