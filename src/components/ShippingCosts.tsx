@@ -94,23 +94,17 @@ const agentShippingOptions: AgentShippingOptions[] = [
         id: "eub",
         name: "EUB",
         prices: [
-          { weight: 0.5, price: 11.17 },
-          { weight: 1, price: 17.67 },
-          { weight: 1.5, price: 24.17 },
-          { weight: 2, price: 30.67 }
+          { weight: 1, price: 19.85 },
+          { weight: 2, price: 33.58 },
+          { weight: 3, price: 47.31 },
+          { weight: 4, price: 61.04 },
+          { weight: 5, price: 74.77 }
         ],
         description: "שירות חסכוני ומהימן, מתאים למשלוחים עד 5 ק״ג",
         deliveryTime: "15-20 ימים",
         maxWeight: 5,
         minDeliveryDays: 15,
-        maxDeliveryDays: 20,
-        dynamicCalculation: {
-          baseFee: 11.17,
-          baseWeight: 500,
-          additionalFeePerUnit: 0.013,
-          unitWeight: 1,
-          maxWeightGrams: 5000
-        }
+        maxDeliveryDays: 20
       },
       {
         id: "israel-line-f",
